@@ -1,0 +1,1548 @@
+{
+  "version": 1,
+  "updatedAt": "2026-10-22T12:00:00.000Z",
+  "league": {
+    "name": "Thunder Wrestling League",
+    "shortName": "TWL",
+    "tagline": "Demo league — load your own in Settings",
+    "logoUrl": "",
+    "season": 1,
+    "discordInvite": "",
+    "rules": "Matches are played online 1-on-1 (or tag) between members.\nDifficulty: Legend. Default match length.\nPlay your match before the deadline and submit the result on the site with a clip or screenshot.\nNo-shows after the deadline are a forfeit loss."
+  },
+  "settings": {
+    "matchTypes": [
+      "Normal",
+      "Extreme Rules",
+      "Falls Count Anywhere",
+      "Hell in a Cell",
+      "Steel Cage",
+      "Tables",
+      "Ladder",
+      "TLC",
+      "Submission",
+      "Last Man Standing",
+      "No Holds Barred",
+      "Iron Man",
+      "Casket",
+      "Ambulance",
+      "I Quit",
+      "Inferno",
+      "Dumpster",
+      "3 Stages of Hell",
+      "Elimination Chamber",
+      "WarGames",
+      "Battle Royal",
+      "Royal Rumble",
+      "Underground",
+      "Bloodline Rules",
+      "Backstage Brawl",
+      "Gauntlet",
+      "Gauntlet Turmoil",
+      "Gauntlet Eliminator",
+      "Money in the Bank",
+      "Special Guest Referee"
+    ],
+    "points": {
+      "win": 3,
+      "draw": 1,
+      "loss": 0
+    },
+    "champBonus": 10,
+    "formMatches": 5,
+    "minMatchesForPct": 3,
+    "defaultDeadlineDays": 7
+  },
+  "brands": [
+    {
+      "id": "raw",
+      "name": "Raw",
+      "color": "#e3242b"
+    },
+    {
+      "id": "smackdown",
+      "name": "SmackDown",
+      "color": "#1f6fff"
+    },
+    {
+      "id": "nxt",
+      "name": "NXT",
+      "color": "#f2c230"
+    }
+  ],
+  "members": [
+    {
+      "id": "mem_demo1",
+      "name": "Jay",
+      "discordId": "",
+      "gamertag": "Jay_2K",
+      "platform": "PS5",
+      "role": "Commissioner",
+      "joined": "2026-09-20"
+    },
+    {
+      "id": "mem_demo2",
+      "name": "Marcus",
+      "discordId": "",
+      "gamertag": "MarcusTheGOAT",
+      "platform": "PS5",
+      "role": "Member",
+      "joined": "2026-09-20"
+    },
+    {
+      "id": "mem_demo3",
+      "name": "Dee",
+      "discordId": "",
+      "gamertag": "DeePlays",
+      "platform": "Xbox Series X|S",
+      "role": "Member",
+      "joined": "2026-09-20"
+    },
+    {
+      "id": "mem_demo4",
+      "name": "Tony",
+      "discordId": "",
+      "gamertag": "Tony_Smash",
+      "platform": "PS5",
+      "role": "Member",
+      "joined": "2026-09-20"
+    },
+    {
+      "id": "mem_demo5",
+      "name": "Kayla",
+      "discordId": "",
+      "gamertag": "KaylaQueen",
+      "platform": "PC (Steam)",
+      "role": "Member",
+      "joined": "2026-09-20"
+    },
+    {
+      "id": "mem_demo6",
+      "name": "Rob",
+      "discordId": "",
+      "gamertag": "Rob24",
+      "platform": "Xbox Series X|S",
+      "role": "Member",
+      "joined": "2026-09-20"
+    },
+    {
+      "id": "mem_demo7",
+      "name": "Nina",
+      "discordId": "",
+      "gamertag": "NinaRipley",
+      "platform": "PS5",
+      "role": "Member",
+      "joined": "2026-09-20"
+    },
+    {
+      "id": "mem_demo8",
+      "name": "Sam",
+      "discordId": "",
+      "gamertag": "SamSlams",
+      "platform": "PS5",
+      "role": "Member",
+      "joined": "2026-09-20"
+    }
+  ],
+  "superstars": [
+    {
+      "id": "ss_demo9",
+      "name": "Cody Rhodes",
+      "brandId": "smackdown",
+      "gender": "M",
+      "alignment": "Face",
+      "status": "Active",
+      "memberId": "mem_demo1",
+      "overall": 92,
+      "finisher": "Cross Rhodes",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demoa",
+      "name": "Gunther",
+      "brandId": "raw",
+      "gender": "M",
+      "alignment": "Heel",
+      "status": "Active",
+      "memberId": "mem_demo2",
+      "overall": 91,
+      "finisher": "Powerbomb",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demob",
+      "name": "CM Punk",
+      "brandId": "raw",
+      "gender": "M",
+      "alignment": "Face",
+      "status": "Active",
+      "memberId": "mem_demo4",
+      "overall": 89,
+      "finisher": "GTS",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_democ",
+      "name": "Roman Reigns",
+      "brandId": "raw",
+      "gender": "M",
+      "alignment": "Tweener",
+      "status": "Active",
+      "memberId": "mem_demo6",
+      "overall": 92,
+      "finisher": "Spear",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demod",
+      "name": "Seth Rollins",
+      "brandId": "raw",
+      "gender": "M",
+      "alignment": "Heel",
+      "status": "Active",
+      "memberId": "mem_demo8",
+      "overall": 89,
+      "finisher": "Stomp",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demoe",
+      "name": "Drew McIntyre",
+      "brandId": "smackdown",
+      "gender": "M",
+      "alignment": "Heel",
+      "status": "Active",
+      "memberId": "mem_demo3",
+      "overall": 88,
+      "finisher": "Claymore",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demof",
+      "name": "LA Knight",
+      "brandId": "smackdown",
+      "gender": "M",
+      "alignment": "Face",
+      "status": "Active",
+      "memberId": "mem_demo8",
+      "overall": 85,
+      "finisher": "BFT",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demog",
+      "name": "Jacob Fatu",
+      "brandId": "smackdown",
+      "gender": "M",
+      "alignment": "Heel",
+      "status": "Active",
+      "memberId": "mem_demo3",
+      "overall": 86,
+      "finisher": "Moonsault",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demoh",
+      "name": "Bron Breakker",
+      "brandId": "raw",
+      "gender": "M",
+      "alignment": "Heel",
+      "status": "Active",
+      "memberId": "mem_demo4",
+      "overall": 86,
+      "finisher": "Spear",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demoi",
+      "name": "Jey Uso",
+      "brandId": "raw",
+      "gender": "M",
+      "alignment": "Face",
+      "status": "Active",
+      "memberId": "mem_demo6",
+      "overall": 86,
+      "finisher": "Uso Splash",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demoj",
+      "name": "Solo Sikoa",
+      "brandId": "smackdown",
+      "gender": "M",
+      "alignment": "Heel",
+      "status": "Active",
+      "memberId": null,
+      "overall": 84,
+      "finisher": "Samoan Spike",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demok",
+      "name": "Randy Orton",
+      "brandId": "smackdown",
+      "gender": "M",
+      "alignment": "Face",
+      "status": "Active",
+      "memberId": "mem_demo2",
+      "overall": 89,
+      "finisher": "RKO",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demol",
+      "name": "Rhea Ripley",
+      "brandId": "raw",
+      "gender": "F",
+      "alignment": "Face",
+      "status": "Active",
+      "memberId": "mem_demo7",
+      "overall": 90,
+      "finisher": "Riptide",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demom",
+      "name": "Iyo Sky",
+      "brandId": "raw",
+      "gender": "F",
+      "alignment": "Face",
+      "status": "Active",
+      "memberId": "mem_demo5",
+      "overall": 88,
+      "finisher": "Over the Moonsault",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demon",
+      "name": "Tiffany Stratton",
+      "brandId": "smackdown",
+      "gender": "F",
+      "alignment": "Heel",
+      "status": "Active",
+      "memberId": "mem_demo5",
+      "overall": 87,
+      "finisher": "Prettiest Moonsault Ever",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demoo",
+      "name": "Jade Cargill",
+      "brandId": "smackdown",
+      "gender": "F",
+      "alignment": "Face",
+      "status": "Active",
+      "memberId": "mem_demo7",
+      "overall": 87,
+      "finisher": "Jaded",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demop",
+      "name": "Liv Morgan",
+      "brandId": "raw",
+      "gender": "F",
+      "alignment": "Heel",
+      "status": "Active",
+      "memberId": null,
+      "overall": 85,
+      "finisher": "Oblivion",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    },
+    {
+      "id": "ss_demoq",
+      "name": "Bianca Belair",
+      "brandId": "smackdown",
+      "gender": "F",
+      "alignment": "Face",
+      "status": "Active",
+      "memberId": null,
+      "overall": 88,
+      "finisher": "KOD",
+      "hometown": "",
+      "imageUrl": "",
+      "bio": "",
+      "contractUntil": null
+    }
+  ],
+  "teams": [
+    {
+      "id": "team_demor",
+      "name": "The Original Bloodline",
+      "kind": "tag",
+      "brandId": "raw",
+      "superstarIds": [
+        "ss_democ",
+        "ss_demoi"
+      ]
+    },
+    {
+      "id": "team_demos",
+      "name": "Best in the World",
+      "kind": "tag",
+      "brandId": "raw",
+      "superstarIds": [
+        "ss_demob",
+        "ss_demod"
+      ]
+    },
+    {
+      "id": "team_demot",
+      "name": "Violent Heels",
+      "kind": "tag",
+      "brandId": "smackdown",
+      "superstarIds": [
+        "ss_demoe",
+        "ss_demog"
+      ]
+    },
+    {
+      "id": "team_demou",
+      "name": "Viper & Mega",
+      "kind": "tag",
+      "brandId": "smackdown",
+      "superstarIds": [
+        "ss_demok",
+        "ss_demof"
+      ]
+    }
+  ],
+  "championships": [
+    {
+      "id": "title_demov",
+      "name": "Undisputed WWE Championship",
+      "brandId": "smackdown",
+      "kind": "singles",
+      "division": "men",
+      "order": 1,
+      "imageUrl": "",
+      "retired": false
+    },
+    {
+      "id": "title_demow",
+      "name": "World Heavyweight Championship",
+      "brandId": "raw",
+      "kind": "singles",
+      "division": "men",
+      "order": 2,
+      "imageUrl": "",
+      "retired": false
+    },
+    {
+      "id": "title_demox",
+      "name": "WWE Women's Championship",
+      "brandId": "smackdown",
+      "kind": "singles",
+      "division": "women",
+      "order": 3,
+      "imageUrl": "",
+      "retired": false
+    },
+    {
+      "id": "title_demoy",
+      "name": "Women's World Championship",
+      "brandId": "raw",
+      "kind": "singles",
+      "division": "women",
+      "order": 4,
+      "imageUrl": "",
+      "retired": false
+    },
+    {
+      "id": "title_demoz",
+      "name": "Intercontinental Championship",
+      "brandId": "raw",
+      "kind": "singles",
+      "division": "men",
+      "order": 5,
+      "imageUrl": "",
+      "retired": false
+    },
+    {
+      "id": "title_demo10",
+      "name": "United States Championship",
+      "brandId": "smackdown",
+      "kind": "singles",
+      "division": "men",
+      "order": 6,
+      "imageUrl": "",
+      "retired": false
+    },
+    {
+      "id": "title_demo11",
+      "name": "World Tag Team Championship",
+      "brandId": "raw",
+      "kind": "tag",
+      "division": "men",
+      "order": 7,
+      "imageUrl": "",
+      "retired": false
+    }
+  ],
+  "reigns": [
+    {
+      "id": "reign_demo12",
+      "titleId": "title_demov",
+      "holders": [
+        "ss_demo9"
+      ],
+      "teamId": null,
+      "wonAt": "2026-09-28",
+      "wonEventId": null,
+      "wonMatchId": null,
+      "lostAt": null,
+      "lostEventId": null,
+      "lostMatchId": null,
+      "notes": "Inaugural champion"
+    },
+    {
+      "id": "reign_demo13",
+      "titleId": "title_demow",
+      "holders": [
+        "ss_demoa"
+      ],
+      "teamId": null,
+      "wonAt": "2026-09-28",
+      "wonEventId": null,
+      "wonMatchId": null,
+      "lostAt": "2026-10-17",
+      "lostEventId": "ev_demo1t",
+      "lostMatchId": "m_demo1q",
+      "notes": "Inaugural champion"
+    },
+    {
+      "id": "reign_demo14",
+      "titleId": "title_demox",
+      "holders": [
+        "ss_demon"
+      ],
+      "teamId": null,
+      "wonAt": "2026-09-28",
+      "wonEventId": null,
+      "wonMatchId": null,
+      "lostAt": null,
+      "lostEventId": null,
+      "lostMatchId": null,
+      "notes": "Inaugural champion"
+    },
+    {
+      "id": "reign_demo15",
+      "titleId": "title_demoy",
+      "holders": [
+        "ss_demom"
+      ],
+      "teamId": null,
+      "wonAt": "2026-09-28",
+      "wonEventId": null,
+      "wonMatchId": null,
+      "lostAt": "2026-10-17",
+      "lostEventId": "ev_demo1t",
+      "lostMatchId": "m_demo1r",
+      "notes": "Inaugural champion"
+    },
+    {
+      "id": "reign_demo16",
+      "titleId": "title_demoz",
+      "holders": [
+        "ss_demoh"
+      ],
+      "teamId": null,
+      "wonAt": "2026-09-28",
+      "wonEventId": null,
+      "wonMatchId": null,
+      "lostAt": null,
+      "lostEventId": null,
+      "lostMatchId": null,
+      "notes": "Inaugural champion"
+    },
+    {
+      "id": "reign_demo17",
+      "titleId": "title_demo10",
+      "holders": [
+        "ss_demof"
+      ],
+      "teamId": null,
+      "wonAt": "2026-09-28",
+      "wonEventId": null,
+      "wonMatchId": null,
+      "lostAt": "2026-10-03",
+      "lostEventId": "ev_demo1g",
+      "lostMatchId": "m_demo1f",
+      "notes": "Inaugural champion"
+    },
+    {
+      "id": "reign_demo18",
+      "titleId": "title_demo11",
+      "holders": [
+        "ss_demob",
+        "ss_demod"
+      ],
+      "teamId": "team_demos",
+      "wonAt": "2026-09-28",
+      "wonEventId": null,
+      "wonMatchId": null,
+      "lostAt": "2026-10-12",
+      "lostEventId": "ev_demo1k",
+      "lostMatchId": "m_demo1h",
+      "notes": "Inaugural champion"
+    },
+    {
+      "id": "reign_es2fv6woev",
+      "titleId": "title_demo10",
+      "holders": [
+        "ss_demog"
+      ],
+      "teamId": null,
+      "wonAt": "2026-10-03",
+      "wonEventId": "ev_demo1g",
+      "wonMatchId": "m_demo1f",
+      "lostAt": null,
+      "lostEventId": null,
+      "lostMatchId": null,
+      "notes": ""
+    },
+    {
+      "id": "reign_dlg50uwoev",
+      "titleId": "title_demo11",
+      "holders": [
+        "ss_democ",
+        "ss_demoi"
+      ],
+      "teamId": "team_demor",
+      "wonAt": "2026-10-12",
+      "wonEventId": "ev_demo1k",
+      "wonMatchId": "m_demo1h",
+      "lostAt": null,
+      "lostEventId": null,
+      "lostMatchId": null,
+      "notes": ""
+    },
+    {
+      "id": "reign_v9dek2woev",
+      "titleId": "title_demow",
+      "holders": [
+        "ss_democ"
+      ],
+      "teamId": null,
+      "wonAt": "2026-10-17",
+      "wonEventId": "ev_demo1t",
+      "wonMatchId": "m_demo1q",
+      "lostAt": null,
+      "lostEventId": null,
+      "lostMatchId": null,
+      "notes": ""
+    },
+    {
+      "id": "reign_f39ivewoev",
+      "titleId": "title_demoy",
+      "holders": [
+        "ss_demol"
+      ],
+      "teamId": null,
+      "wonAt": "2026-10-17",
+      "wonEventId": "ev_demo1t",
+      "wonMatchId": "m_demo1r",
+      "lostAt": null,
+      "lostEventId": null,
+      "lostMatchId": null,
+      "notes": ""
+    }
+  ],
+  "events": [
+    {
+      "id": "ev_demo1c",
+      "name": "Raw Week 1",
+      "type": "weekly",
+      "brandId": "raw",
+      "date": "2026-10-05",
+      "deadline": "2026-10-09",
+      "season": 1,
+      "posterUrl": "",
+      "notes": "",
+      "card": [
+        {
+          "id": "m_demo19",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": null,
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demob"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demod"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 0,
+            "draw": false,
+            "nc": false,
+            "method": "Pinfall",
+            "rating": 4,
+            "link": "",
+            "notes": ""
+          }
+        },
+        {
+          "id": "m_demo1a",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": null,
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demol"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demop"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 0,
+            "draw": false,
+            "nc": false,
+            "method": "Submission",
+            "rating": 3.5,
+            "link": "",
+            "notes": ""
+          }
+        },
+        {
+          "id": "m_demo1b",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": "title_demoz",
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demoi"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demoh"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 1,
+            "draw": false,
+            "nc": false,
+            "method": "Pinfall",
+            "rating": 3.75,
+            "link": "",
+            "notes": "",
+            "retainedReignId": "reign_demo16"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ev_demo1g",
+      "name": "SmackDown Week 1",
+      "type": "weekly",
+      "brandId": "smackdown",
+      "date": "2026-10-03",
+      "deadline": "2026-10-08",
+      "season": 1,
+      "posterUrl": "",
+      "notes": "",
+      "card": [
+        {
+          "id": "m_demo1d",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": null,
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demoe"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demok"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 1,
+            "draw": false,
+            "nc": false,
+            "method": "Pinfall",
+            "rating": 4,
+            "link": "",
+            "notes": ""
+          }
+        },
+        {
+          "id": "m_demo1e",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": null,
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demoo"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demoq"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 0,
+            "draw": false,
+            "nc": false,
+            "method": "Pinfall",
+            "rating": 3.5,
+            "link": "",
+            "notes": ""
+          }
+        },
+        {
+          "id": "m_demo1f",
+          "kind": "match",
+          "format": "triple",
+          "type": "Normal",
+          "name": "",
+          "titleId": "title_demo10",
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demof"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demog"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demoj"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 1,
+            "draw": false,
+            "nc": false,
+            "method": "Pinfall",
+            "rating": 4.25,
+            "link": "",
+            "notes": "",
+            "titleChange": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "ev_demo1k",
+      "name": "Raw Week 2",
+      "type": "weekly",
+      "brandId": "raw",
+      "date": "2026-10-12",
+      "deadline": "2026-10-16",
+      "season": 1,
+      "posterUrl": "",
+      "notes": "",
+      "card": [
+        {
+          "id": "m_demo1h",
+          "kind": "match",
+          "format": "tag",
+          "type": "Normal",
+          "name": "",
+          "titleId": "title_demo11",
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_democ",
+                "ss_demoi"
+              ],
+              "teamId": "team_demor"
+            },
+            {
+              "ids": [
+                "ss_demob",
+                "ss_demod"
+              ],
+              "teamId": "team_demos"
+            }
+          ],
+          "result": {
+            "winnerSide": 0,
+            "draw": false,
+            "nc": false,
+            "method": "Pinfall",
+            "rating": 4.5,
+            "link": "",
+            "notes": "",
+            "titleChange": true
+          }
+        },
+        {
+          "id": "m_demo1i",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": null,
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demoa"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demob"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 1,
+            "draw": false,
+            "nc": false,
+            "method": "Disqualification",
+            "rating": 3,
+            "link": "",
+            "notes": ""
+          }
+        },
+        {
+          "id": "m_demo1j",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": null,
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demom"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demop"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 0,
+            "draw": false,
+            "nc": false,
+            "method": "Pinfall",
+            "rating": 3.75,
+            "link": "",
+            "notes": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "ev_demo1o",
+      "name": "SmackDown Week 2",
+      "type": "weekly",
+      "brandId": "smackdown",
+      "date": "2026-10-10",
+      "deadline": "2026-10-15",
+      "season": 1,
+      "posterUrl": "",
+      "notes": "",
+      "card": [
+        {
+          "id": "m_demo1l",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": null,
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demo9"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demoj"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 0,
+            "draw": false,
+            "nc": false,
+            "method": "Pinfall",
+            "rating": 3.5,
+            "link": "",
+            "notes": ""
+          }
+        },
+        {
+          "id": "m_demo1m",
+          "kind": "match",
+          "format": "singles",
+          "type": "No Holds Barred",
+          "name": "",
+          "titleId": null,
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demoe"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demof"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 0,
+            "draw": false,
+            "nc": false,
+            "method": "Pinfall",
+            "rating": 4,
+            "link": "",
+            "notes": ""
+          }
+        },
+        {
+          "id": "m_demo1n",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": "title_demox",
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demon"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demoq"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 0,
+            "draw": false,
+            "nc": false,
+            "method": "Pinfall",
+            "rating": 4,
+            "link": "",
+            "notes": "",
+            "retainedReignId": "reign_demo14"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ev_demo1t",
+      "name": "Saturday Night's Main Event",
+      "type": "ple",
+      "brandId": null,
+      "date": "2026-10-17",
+      "deadline": "2026-10-21",
+      "season": 1,
+      "posterUrl": "",
+      "notes": "The first PLE of Season 1. Every title on the line!",
+      "card": [
+        {
+          "id": "p_demo21",
+          "kind": "promo",
+          "title": "Cody Rhodes opens the show",
+          "superstarIds": [
+            "ss_demo9"
+          ],
+          "text": "Cody addresses Drew McIntyre before their ladder match.",
+          "link": ""
+        },
+        {
+          "id": "m_demo1p",
+          "kind": "match",
+          "format": "singles",
+          "type": "Ladder",
+          "name": "",
+          "titleId": "title_demov",
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demo9"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demoe"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 0,
+            "draw": false,
+            "nc": false,
+            "method": "Item retrieval",
+            "rating": 5,
+            "link": "",
+            "notes": "",
+            "retainedReignId": "reign_demo12"
+          }
+        },
+        {
+          "id": "m_demo1q",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": "title_demow",
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demoa"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_democ"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 1,
+            "draw": false,
+            "nc": false,
+            "method": "Pinfall",
+            "rating": 4.75,
+            "link": "",
+            "notes": "",
+            "titleChange": true
+          }
+        },
+        {
+          "id": "m_demo1r",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": "title_demoy",
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demom"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demol"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": {
+            "winnerSide": 1,
+            "draw": false,
+            "nc": false,
+            "method": "Pinfall",
+            "rating": 4.25,
+            "link": "",
+            "notes": "",
+            "titleChange": true
+          }
+        },
+        {
+          "id": "m_demo1s",
+          "kind": "match",
+          "format": "tag",
+          "type": "Tables",
+          "name": "",
+          "titleId": null,
+          "stipulation": "",
+          "deadline": null,
+          "sides": [
+            {
+              "ids": [
+                "ss_demoe",
+                "ss_demog"
+              ],
+              "teamId": "team_demot"
+            },
+            {
+              "ids": [
+                "ss_demok",
+                "ss_demof"
+              ],
+              "teamId": "team_demou"
+            }
+          ],
+          "result": {
+            "winnerSide": 1,
+            "draw": false,
+            "nc": false,
+            "method": "Pinfall",
+            "rating": 3.75,
+            "link": "",
+            "notes": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "ev_demo1x",
+      "name": "SmackDown Week 3",
+      "type": "weekly",
+      "brandId": "smackdown",
+      "date": "2026-10-24",
+      "deadline": "2026-10-29",
+      "season": 1,
+      "posterUrl": "",
+      "notes": "Fallout from SNME. Who steps up to Cody?",
+      "card": [
+        {
+          "id": "m_demo1u",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": "title_demo10",
+          "stipulation": "",
+          "deadline": "2026-10-29",
+          "sides": [
+            {
+              "ids": [
+                "ss_demok"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demog"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": null
+        },
+        {
+          "id": "m_demo1v",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": null,
+          "stipulation": "",
+          "deadline": "2026-10-29",
+          "sides": [
+            {
+              "ids": [
+                "ss_demoo"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demon"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": null
+        },
+        {
+          "id": "m_demo1w",
+          "kind": "match",
+          "format": "fatal4",
+          "type": "Extreme Rules",
+          "name": "",
+          "titleId": null,
+          "stipulation": "#1 contender for the Undisputed WWE Championship",
+          "deadline": "2026-10-29",
+          "sides": [
+            {
+              "ids": [
+                "ss_demof"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demoe"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demoj"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demo9"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": null
+        }
+      ]
+    },
+    {
+      "id": "ev_demo20",
+      "name": "Raw Week 3",
+      "type": "weekly",
+      "brandId": "raw",
+      "date": "2026-10-26",
+      "deadline": "2026-10-30",
+      "season": 1,
+      "posterUrl": "",
+      "notes": "",
+      "card": [
+        {
+          "id": "m_demo1y",
+          "kind": "match",
+          "format": "singles",
+          "type": "Steel Cage",
+          "name": "",
+          "titleId": null,
+          "stipulation": "Rematch after the DQ finish in Week 2",
+          "deadline": "2026-10-30",
+          "sides": [
+            {
+              "ids": [
+                "ss_demoa"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demob"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": null
+        },
+        {
+          "id": "m_demo1z",
+          "kind": "match",
+          "format": "singles",
+          "type": "Normal",
+          "name": "",
+          "titleId": null,
+          "stipulation": "",
+          "deadline": "2026-10-30",
+          "sides": [
+            {
+              "ids": [
+                "ss_demol"
+              ],
+              "teamId": null
+            },
+            {
+              "ids": [
+                "ss_demom"
+              ],
+              "teamId": null
+            }
+          ],
+          "result": null
+        }
+      ]
+    }
+  ],
+  "storylines": [
+    {
+      "id": "story_demo22",
+      "title": "The Ring General vs The Best in the World",
+      "heat": 5,
+      "started": "2026-10-12",
+      "status": "active",
+      "summary": "Punk beat Gunther by DQ on Raw. Gunther lost his title at SNME and blames Punk. Now they settle it inside a steel cage.",
+      "superstarIds": [
+        "ss_demoa",
+        "ss_demob"
+      ],
+      "updates": [
+        {
+          "id": "upd_demo23",
+          "date": "2026-10-12",
+          "text": "Gunther gets himself disqualified attacking Punk with a chair."
+        },
+        {
+          "id": "upd_demo24",
+          "date": "2026-10-19",
+          "text": "Steel cage rematch made official for Raw Week 3."
+        }
+      ]
+    },
+    {
+      "id": "story_demo25",
+      "title": "Chasing the American Nightmare",
+      "heat": 4,
+      "started": "2026-10-10",
+      "status": "active",
+      "summary": "Drew McIntyre came up short at SNME. Four men fight for the next shot at Cody.",
+      "superstarIds": [
+        "ss_demo9",
+        "ss_demoe",
+        "ss_demof",
+        "ss_demoj"
+      ],
+      "updates": [
+        {
+          "id": "upd_demo26",
+          "date": "2026-10-17",
+          "text": "Cody retains in a 5-star ladder match."
+        }
+      ]
+    }
+  ],
+  "promos": [
+    {
+      "id": "promo_demo27",
+      "superstarId": "ss_demob",
+      "eventId": "ev_demo20",
+      "title": "No more rules, Gunther",
+      "text": "You wanted to end it with a chair? Fine. Next Monday there's a cage, and there's nowhere to hide.",
+      "link": "",
+      "date": "2026-10-20",
+      "submittedBy": "Tony"
+    }
+  ],
+  "drafts": [],
+  "prHistory": null
+}

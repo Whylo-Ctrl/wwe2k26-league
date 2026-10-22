@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "updatedAt": "2026-10-22T12:00:00.000Z",
+  "league": {
+    "name": "My WWE 2K26 League",
+    "shortName": "W2K26",
+    "tagline": "Online league powered by Discord",
+    "logoUrl": "",
+    "season": 1,
+    "discordInvite": "",
+    "rules": ""
+  },
+  "settings": {
+    "matchTypes": [
+      "Normal",
+      "Extreme Rules",
+      "Falls Count Anywhere",
+      "Hell in a Cell",
+      "Steel Cage",
+      "Tables",
+      "Ladder",
+      "TLC",
+      "Submission",
+      "Last Man Standing",
+      "No Holds Barred",
+      "Iron Man",
+      "Casket",
+      "Ambulance",
+      "I Quit",
+      "Inferno",
+      "Dumpster",
+      "3 Stages of Hell",
+      "Elimination Chamber",
+      "WarGames",
+      "Battle Royal",
+      "Royal Rumble",
+      "Underground",
+      "Bloodline Rules",
+      "Backstage Brawl",
+      "Gauntlet",
+      "Gauntlet Turmoil",
+      "Gauntlet Eliminator",
+      "Money in the Bank",
+      "Special Guest Referee"
+    ],
+    "points": {
+      "win": 3,
+      "draw": 1,
+      "loss": 0
+    },
+    "champBonus": 10,
+    "formMatches": 5,
+    "minMatchesForPct": 3,
+    "defaultDeadlineDays": 7
+  },
+  "brands": [
+    {
+      "id": "raw",
+      "name": "Raw",
+      "color": "#e3242b"
+    },
+    {
+      "id": "smackdown",
+      "name": "SmackDown",
+      "color": "#1f6fff"
+    },
+    {
+      "id": "nxt",
+      "name": "NXT",
+      "color": "#f2c230"
+    }
+  ],
+  "members": [],
+  "superstars": [],
+  "teams": [],
+  "championships": [],
+  "reigns": [],
+  "events": [],
+  "storylines": [],
+  "promos": [],
+  "drafts": []
+}
