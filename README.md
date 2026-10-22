@@ -106,3 +106,6 @@ New season? **Settings → Backup & seasons → Start Season 2**. Standings rese
 | `demo.json` | Sample league for trying things out |
 
 It's plain HTML/CSS/JavaScript with no build step and nothing to install. To run it on your own computer: `python3 -m http.server` in this folder, then open http://localhost:8000.
+
+## Updating the code
+If you change any file, bump the `v=` number in `index.html` (it appears in a few places, so find and replace `v=8` with `v=9`, and so on). That makes everyone's browser load the new files instead of old cached copies.

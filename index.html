@@ -10,11 +10,36 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
   <div id="app"></div>
   <noscript>This site needs JavaScript turned on.</noscript>
-  <script type="module" src="app.js"></script>
+  <!-- Bump v= whenever the site is updated so browsers fetch the new files instead of old cached ones. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "./app.js": "./app.js?v=8",
+      "./awards.js": "./awards.js?v=8",
+      "./discord.js": "./discord.js?v=8",
+      "./draft.js": "./draft.js?v=8",
+      "./gm-page.js": "./gm-page.js?v=8",
+      "./gm.js": "./gm.js?v=8",
+      "./help.js": "./help.js?v=8",
+      "./home.js": "./home.js?v=8",
+      "./roster.js": "./roster.js?v=8",
+      "./settings.js": "./settings.js?v=8",
+      "./setup.js": "./setup.js?v=8",
+      "./shows.js": "./shows.js?v=8",
+      "./standings.js": "./standings.js?v=8",
+      "./stats.js": "./stats.js?v=8",
+      "./store.js": "./store.js?v=8",
+      "./storylines.js": "./storylines.js?v=8",
+      "./titles.js": "./titles.js?v=8",
+      "./ui.js": "./ui.js?v=8"
+    }
+  }
+  </script>
+  <script type="module" src="app.js?v=8"></script>
 </body>
 </html>
