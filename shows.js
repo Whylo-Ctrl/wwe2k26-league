@@ -4,8 +4,8 @@ import {
   esc, safeUrl, fmtDate, stars, avatar, brandChip, sideText, holderText, options, opt, superstarOptions, superstarChecklist,
   field, input, textarea, formModal, openModal, confirmDialog, toast, emptyState, pageHead, bindChecklistSearch,
 } from './ui.js';
-import { post, cardMessage, resultsMessage, singleResultMessage, titleChangeMessage, remindersMessage } from './discord.js';
-import { recordResult, undoGmEffects } from './gm.js';
+import { post, cardMessage, resultsMessage, singleResultMessage, titleChangeMessage, remindersMessage, cashInMessage } from './discord.js';
+import { recordResult, undoGmEffects, simulateMatch } from './gm.js';
 
 export function eventStatus(ev) {
   const matches = ev.card.filter((s) => s.kind === 'match');
@@ -158,6 +158,8 @@ function segmentCard(ev, seg, i, n) {
       <span>${line}</span>
       ${r.rating ? `<span class="text-gold" title="${esc(r.rating)} stars">${stars(r.rating)}</span>` : ''}
       ${r.titleChange ? '<span class="chip chip-gold">👑 New champion</span>' : r.retainedReignId ? '<span class="chip">Retained</span>' : ''}
+      ${r.simulated ? '<span class="chip chip-muted">🎲 Simulated</span>' : ''}
+      ${seg.special && !r.draw && !r.nc ? (seg.special.kind === 'mitb' ? '<span class="chip chip-good">💼 Wins the briefcase</span>' : seg.special.kind === 'rumble' ? '<span class="chip chip-gold">🏆 WrestleMania title shot</span>' : seg.special.round === 'final' ? `<span class="chip chip-gold">👑 ${seg.special.division === 'F' ? 'Queen' : 'King'} of the Ring</span>` : '') : ''}
       ${safeUrl(r.link) ? `<a href="${esc(safeUrl(r.link))}" target="_blank" rel="noopener">Watch</a>` : ''}
     </div>${r.notes ? `<p class="muted small">${esc(r.notes)}</p>` : ''}`;
   } else if (dl) {
@@ -166,15 +168,15 @@ function segmentCard(ev, seg, i, n) {
   }
   const buttons = [];
   if (admin) buttons.push(`<button class="btn btn-sm ${done ? 'btn-ghost' : 'btn-primary'}" data-act="seg-result" data-ev="${esc(ev.id)}" data-seg="${esc(seg.id)}">${done ? 'Edit result' : 'Enter result'}</button>`);
+  if (admin && !done && seg.sides.filter((x) => x.ids.length).length >= 2) buttons.push(`<button class="btn btn-sm btn-ghost" data-act="seg-sim" data-seg="${esc(seg.id)}" title="Let the app decide the winner">🎲 Sim</button>`);
   if (admin && done) buttons.push(`<button class="btn btn-sm btn-ghost" data-act="seg-post" data-ev="${esc(ev.id)}" data-seg="${esc(seg.id)}">Post result</button>`);
-  if (!done && seg.sides.some((s) => s.ids.length)) buttons.push(`<a class="btn btn-sm btn-ghost" href="#/submit?match=${esc(seg.id)}">Submit result</a>`);
 
   return `<article class="seg card${t ? ' seg-title-match' : ''}">
     <div class="seg-head">
       <span class="seg-num">${i + 1}</span>
       <div class="grow">
         <div class="seg-title">${esc(matchName(seg))}</div>
-        <div class="chips">${t ? `<span class="chip chip-gold">🏆 ${esc(t.name)}</span>` : ''}${seg.contenderFor ? '<span class="chip chip-upcoming">#1 Contender</span>' : ''}${seg.stipulation ? `<span class="chip chip-muted">${esc(seg.stipulation)}</span>` : ''}</div>
+        <div class="chips">${t ? `<span class="chip chip-gold">🏆 ${esc(t.name)}</span>` : ''}${seg.contenderFor ? '<span class="chip chip-upcoming">#1 Contender</span>' : ''}${seg.cashIn ? '<span class="chip chip-good">💼 Cash-in</span>' : ''}${seg.special ? `<span class="chip chip-gold">${seg.special.kind === 'mitb' ? '💼 Briefcase on the line' : seg.special.kind === 'rumble' ? '🏆 Title shot on the line' : '👑 Tournament'}</span>` : ''}${seg.stipulation ? `<span class="chip chip-muted">${esc(seg.stipulation)}</span>` : ''}</div>
         ${seg.gm && seg.gm.reason ? `<div class="gm-reason">${esc(seg.gm.reason)}</div>` : ''}
       </div>
       ${tools}
@@ -247,6 +249,7 @@ export const showView = {
     'seg-up': (el) => moveSeg(el.dataset.seg, -1),
     'seg-down': (el) => moveSeg(el.dataset.seg, 1),
     'seg-result': (el) => openResult(el.dataset.seg),
+    'seg-sim': (el) => simSegment(el.dataset.seg),
     'seg-post': (el) => { const f = findSegment(el.dataset.seg); post(singleResultMessage(f.ev, f.seg)); },
   },
 };
@@ -448,16 +451,36 @@ export function resultFromForm(v) {
 }
 
 // Save a result (from the admin form or an imported submission) and announce title changes.
+// Toasts and Discord prompts for whatever a result set in motion.
+export function announceOutcome(ev, seg, outcome, { quiet = false } = {}) {
+  const sim = seg.result && seg.result.simulated ? '🎲 ' : '';
+  if (outcome && outcome.kind === 'change') {
+    toast(`${sim}👑 New ${getTitle(seg.titleId)?.name || 'champion'}: ${holderText(outcome.reign)}`, 'ok', 5000);
+    if (!quiet && !outcome.cashIn) setTimeout(() => post(titleChangeMessage(outcome.reign)), 50);
+  } else if (outcome && outcome.kind === 'retain') {
+    toast(`${sim}Result saved — ${holderText(outcome.reign)} retained${outcome.reason ? ` (${outcome.reason})` : ''}`);
+  } else if (!quiet) toast(`${sim}Result saved${sim ? `: ${sideText(seg.sides[Number(seg.result.winnerSide)] || { ids: [] })} wins` : ''}`);
+  if (outcome && outcome.briefcase) toast(`💼 ${sideText(seg.sides[Number(seg.result.winnerSide)])} wins the Money in the Bank briefcase!`, 'ok', 6000);
+  if (outcome && outcome.royalty) toast(`👑 ${sideText(seg.sides[Number(seg.result.winnerSide)])} is your new ${seg.special.division === 'F' ? 'Queen' : 'King'} of the Ring!`, 'ok', 6000);
+  if (outcome && outcome.rumbleWinner) toast(`🏆 ${sideText(seg.sides[Number(seg.result.winnerSide)])} wins the Royal Rumble and gets a WrestleMania title shot!`, 'ok', 6000);
+  if (outcome && outcome.cashIn) {
+    toast('💼 CASH-IN! The briefcase holder just ran in. A new title match was added to the card.', 'ok', 7000);
+    if (!quiet) setTimeout(() => post(cashInMessage(ev, outcome.cashIn)), 60);
+  }
+}
+
+export function simSegment(segId) {
+  const f = findSegment(segId);
+  const res = simulateMatch(state.data, f.ev, f.seg);
+  if (!res) { toast('This match needs at least two sides to sim', 'error'); return null; }
+  return saveResult(segId, res);
+}
+
 export function saveResult(segId, result) {
   const f = findSegment(segId);
   if (!f) throw new Error('That match no longer exists.');
   const outcome = commit((d) => recordResult(d, f.ev, f.seg, result));
-  if (outcome && outcome.kind === 'change') {
-    toast(`👑 New ${getTitle(f.seg.titleId)?.name || 'champion'}: ${holderText(outcome.reign)}`, 'ok', 5000);
-    setTimeout(() => post(titleChangeMessage(outcome.reign)), 50);
-  } else if (outcome && outcome.kind === 'retain') {
-    toast(`Result saved — ${holderText(outcome.reign)} retained${outcome.reason ? ` (${outcome.reason})` : ''}`);
-  } else toast('Result saved');
+  announceOutcome(f.ev, f.seg, outcome);
   runHooks('afterResults');
   return outcome;
 }

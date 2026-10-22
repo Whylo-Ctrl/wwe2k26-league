@@ -1,11 +1,12 @@
 // The GM page: enter this week's results, then let the GM book next week.
 
-import { state, isAdmin, commit, refresh, hooks, runHooks, githubReady, publish, autoSaveOn, getSuperstar, getMember, getTitle, getBrand, getTeam, WIN_METHODS } from './store.js';
+import { state, isAdmin, commit, refresh, hooks, runHooks, getSuperstar, getMember, getTitle, getBrand, getTeam, WIN_METHODS } from './store.js';
 import { hasResult, matchName, currentReign, participants, today } from './stats.js';
 import {
   gmSettings, GM_DEFAULTS, PLE_NAMES, DAY_NAMES, currentWeek, weekEvents, weekStatus, isPLEWeek, pleNameFor, nextPLEWeek,
-  planWeek, addMatchToPlan, bookPlan, recordResult, titleTier, showDay,
+  planWeek, addMatchToPlan, bookPlan, recordResult, titleTier, showDay, simulateMatch,
 } from './gm.js';
+import { announceOutcome, simSegment } from './shows.js';
 import { esc, avatar, brandChip, fmtDate, stars, options, field, input, textarea, formModal, confirmDialog, toast, pageHead, emptyState, sideText, superstarOptions, formValues } from './ui.js';
 import { post, cardMessage, titleChangeMessage, resultsMessage, sendWebhook, defaultWebhookFor } from './discord.js';
 
@@ -80,13 +81,41 @@ async function afterResults() {
     const ids = commit((data) => bookPlan(data, plan));
     toast(`🤖 Autopilot booked Week ${plan.week}`, 'ok', 5000);
     if ((state.admin.webhooks || []).length) await postCardsDirect(ids).catch((e) => toast(`Posting failed: ${e.message}`, 'error', 7000));
-    if (s.autoPublish && githubReady() && !autoSaveOn()) {
-      const r = await publish({ message: `GM booked Week ${plan.week}` }).catch((e) => { toast(`Publish failed: ${e.message}`, 'error', 7000); return null; });
-      if (r && r.ok) toast('Published to GitHub');
-    }
   } finally { autopilotBusy = false; }
 }
 hooks.afterResults.add(afterResults);
+
+function cpuOnly(seg) {
+  return seg.sides.every((sd) => sd.ids.every((id) => { const x = getSuperstar(id); return !(x && x.memberId && getMember(x.memberId)); }));
+}
+
+// Sim a batch of pending matches in one go.
+function simMany(list, label) {
+  if (!list.length) { toast('Nothing to sim', 'error'); return 0; }
+  const outs = [];
+  commit((d) => {
+    for (const { ev, seg } of list) {
+      const res = simulateMatch(d, ev, seg);
+      if (res) outs.push({ ev, seg, out: recordResult(d, ev, seg, res) });
+    }
+  });
+  toast(`🎲 Simmed ${outs.length} ${label}`);
+  for (const o of outs) announceOutcome(o.ev, o.seg, o.out, { quiet: true });
+  runHooks('afterResults');
+  return outs.length;
+}
+
+// Optional: sim anything nobody played by its deadline, whenever the app opens.
+hooks.afterLoad.add(() => {
+  const d = state.data;
+  if (!gmSettings(d).autoSimOverdue) return;
+  const overdue = [];
+  for (const ev of d.events) for (const seg of ev.card) {
+    const dl = seg.deadline || ev.deadline;
+    if (seg.kind === 'match' && !hasResult(seg) && dl && dl < today() && seg.sides.filter((x) => x.ids.length).length >= 2) overdue.push({ ev, seg });
+  }
+  if (overdue.length) simMany(overdue, `overdue match${overdue.length === 1 ? '' : 'es'} (past their deadline)`);
+});
 
 // ---------- sections ----------
 function thisWeekSection(cur) {
@@ -111,7 +140,11 @@ function thisWeekSection(cur) {
     <div class="section-head"><h2>Week ${cur} results</h2><span class="chip ${st.complete ? 'chip-good' : 'chip-in-progress'}">${st.done}/${st.total} in</span></div>
     <div class="chips">${evs.map((ev) => `<a class="chip" href="#/show/${esc(ev.id)}" style="--c:${esc(getBrand(ev.brandId)?.color || '#f5c542')}">${esc(ev.name)}</a>`).join('')}</div>
     ${st.pending.length ? `<form id="gm-results" class="form">
-      <p class="muted small">Tap the winner of each match you have a result for. Leave the rest blank.</p>
+      <p class="muted small">Tap the winner of each match you have a result for. Leave the rest blank, or let the app sim them.</p>
+      <div class="row gap wrap">
+        ${st.pending.filter(({ seg }) => cpuOnly(seg)).length ? `<button type="button" class="btn btn-sm btn-ghost" data-act="gm-sim-cpu">🎲 Sim CPU-only matches (${st.pending.filter(({ seg }) => cpuOnly(seg)).length})</button>` : ''}
+        <button type="button" class="btn btn-sm btn-ghost" data-act="gm-sim-all">🎲 Sim all ${st.pending.length} remaining</button>
+      </div>
       ${st.pending.map(({ ev, seg }) => `
         <div class="qr-row">
           <div class="eyebrow">${esc(ev.name)} · ${esc(matchName(seg))}${seg.titleId ? ` · 🏆 ${esc(getTitle(seg.titleId)?.name || '')}` : ''}</div>
@@ -123,6 +156,7 @@ function thisWeekSection(cur) {
           <div class="row gap wrap">
             <select name="m_${esc(seg.id)}" aria-label="Method">${options(WIN_METHODS, 'Pinfall')}</select>
             <select name="r_${esc(seg.id)}" aria-label="Rating">${options(ratings, '', { empty: 'Rating' })}</select>
+            <button type="button" class="btn btn-sm btn-ghost" data-act="gm-sim-one" data-seg="${esc(seg.id)}" title="Let the app decide">🎲 Sim</button>
           </div>
         </div>`).join('')}
       <button class="btn btn-primary" type="submit">Save results</button>
@@ -188,13 +222,14 @@ function contendersSection() {
         return `<tr>
           <td><strong>${esc(t.name)}</strong><div class="muted tiny">${tier === 'world' ? 'World title · PLEs' : tier === 'tag' ? 'Tag title · TV + PLEs' : 'Secondary · TV + PLEs'}</div></td>
           <td>${r ? esc(sideText({ ids: r.holders, teamId: r.teamId })) : '<span class="muted">Vacant</span>'}</td>
-          <td>${c ? esc(sideText({ ids: c.ids || [], teamId: c.teamId })) : '<span class="muted">—</span>'}</td>
+          <td>${c ? `${esc(sideText({ ids: c.ids || [], teamId: c.teamId }))}${c.reason ? `<div class="muted tiny">${esc(c.reason)}${c.forPle ? ` · at ${esc(c.forPle)}` : ''}</div>` : ''}` : '<span class="muted">—</span>'}</td>
           <td class="hide-sm muted small">${t.kind === 'tag' ? 'Tag' : t.division === 'women' ? "Women's" : t.division === 'open' ? 'Open' : "Men's"}</td>
           <td class="num"><button class="btn btn-sm btn-ghost" data-act="gm-contender" data-id="${esc(t.id)}">${c ? 'Change' : 'Set'}</button>${c ? `<button class="btn btn-sm btn-ghost" data-act="gm-contender-clear" data-id="${esc(t.id)}">Clear</button>` : ''}</td>
         </tr>`;
       }).join('')}</tbody>
     </table></div>
-    <p class="muted tiny">The first singles title of each brand and division counts as its world title (change this per title on the Titles page).</p>
+    ${(d.briefcases || []).length ? `<h3>💼 Money in the Bank</h3><ul class="card-list">${d.briefcases.map((b) => `<li><strong>${esc(getSuperstar(b.holder)?.name || '?')}</strong> <span class="muted small">holds the ${b.division === 'F' ? "women's" : "men's"} briefcase · ${Math.max(0, currentWeek(d) - (Number(b.week) || 0))} week(s) · can cash in on a world champion any time</span></li>`).join('')}</ul>` : ''}
+    <p class="muted tiny">The first singles title of each brand and division counts as its world title (change this per title on the Titles page). Special PLEs: Royal Rumble (winner gets a WrestleMania title shot), Money in the Bank (briefcase), King & Queen of the Ring (tournament).</p>
   </section>`;
 }
 
@@ -207,7 +242,6 @@ function settingsSection() {
       <summary><h2 class="inline">GM settings</h2></summary>
       <form id="gm-settings" class="form" style="margin-top:12px">
         <label class="check autopilot"><input type="checkbox" name="autopilot" ${s.autopilot ? 'checked' : ''}> <span><strong>🤖 Autopilot.</strong> As soon as the last result of the week is saved, book next week and post the cards to Discord. No clicks needed.</span></label>
-        <label class="check"><input type="checkbox" name="autoPublish" ${s.autoPublish ? 'checked' : ''}> Autopilot also saves for everyone (if you haven't turned on automatic saving)</label>
         <div class="grid-form">
           ${field('Matches per weekly show', input('matchesPerShow', s.matchesPerShow, 'type="number" min="1" max="12"'))}
           ${field('PLE every … weeks', input('pleEvery', s.pleEvery, 'type="number" min="0" max="12"'), '0 = no PLEs. On PLE weeks there are no weekly shows.')}
@@ -215,6 +249,7 @@ function settingsSection() {
           ${field('Secondary titles defended every … weeks', input('tvTitleEvery', s.tvTitleEvery, 'type="number" min="1" max="8"'))}
           ${field('Stipulation matches', `<select name="stipulationChance">${options(chance, String(s.stipulationChance))}</select>`)}
         </div>
+        <label class="check"><input type="checkbox" name="autoSimOverdue" ${s.autoSimOverdue ? 'checked' : ''}> 🎲 Sim any match nobody played by its deadline (checked whenever you open the app)</label>
         <label class="check"><input type="checkbox" name="everyMemberWeekly" ${s.everyMemberWeekly ? 'checked' : ''}> Every member gets at least one match each week</label>
         <label class="check"><input type="checkbox" name="allowCpuOpponents" ${s.allowCpuOpponents ? 'checked' : ''}> Use unassigned (CPU) superstars as opponents</label>
         <label class="check"><input type="checkbox" name="allowCpuVsCpu" ${s.allowCpuVsCpu ? 'checked' : ''}> Allow CPU vs CPU matches (you sim them)</label>
@@ -230,7 +265,6 @@ function settingsSection() {
 
 export default {
   render() {
-    if (!isAdmin()) return emptyState('Commissioners only', 'The GM books the shows. Turn on commissioner mode in Settings to use it.', '<a class="btn" href="#/settings">Settings</a>');
     const d = state.data;
     const cur = currentWeek(d);
     const s = gmSettings(d);
@@ -259,11 +293,13 @@ export default {
             method: v[`m_${seg.id}`] || 'Pinfall', rating: v[`r_${seg.id}`] ? Number(v[`r_${seg.id}`]) : 0, link: '', notes: '',
           };
           const out = recordResult(d, ev, seg, result);
-          if (out && out.kind === 'change') changes.push(out.reign);
+          changes.push({ ev, seg, out });
         }
       });
-      toast(`Saved ${picks.length} result${picks.length === 1 ? '' : 's'}${changes.length ? ` — ${changes.length} new champion${changes.length === 1 ? '' : 's'}!` : ''}`);
-      if (changes.length) setTimeout(() => post(titleChangeMessage(changes[0])), 50);
+      const champs = changes.filter((c) => c.out && c.out.kind === 'change' && !c.out.cashIn);
+      toast(`Saved ${picks.length} result${picks.length === 1 ? '' : 's'}${champs.length ? ` — ${champs.length} new champion${champs.length === 1 ? '' : 's'}!` : ''}`);
+      for (const c of changes) announceOutcome(c.ev, c.seg, c.out, { quiet: true });
+      if (champs.length) setTimeout(() => post(titleChangeMessage(champs[0].out.reign)), 50);
       runHooks('afterResults');
     });
     const sf = root.querySelector('#gm-settings');
@@ -278,7 +314,7 @@ export default {
           matchesPerShow: Math.max(1, Number(v.matchesPerShow) || 4), pleEvery: Math.max(0, Number(v.pleEvery) || 0), pleMatches: Math.max(1, Number(v.pleMatches) || 6),
           tvTitleEvery: Math.max(1, Number(v.tvTitleEvery) || 2), stipulationChance: Number(v.stipulationChance) || 0,
           everyMemberWeekly: !!v.everyMemberWeekly, allowCpuOpponents: !!v.allowCpuOpponents, allowCpuVsCpu: !!v.allowCpuVsCpu,
-          promos: !!v.promos, autoStorylines: !!v.autoStorylines, autopilot: !!v.autopilot, autoPublish: !!v.autoPublish,
+          promos: !!v.promos, autoStorylines: !!v.autoStorylines, autopilot: !!v.autopilot, autoSimOverdue: !!v.autoSimOverdue,
           showDays, pleNames: names.length ? names : PLE_NAMES,
         };
       });
@@ -289,6 +325,13 @@ export default {
     if (det) det.addEventListener('toggle', () => { ui.showSettings = det.open; });
   },
   actions: {
+    'gm-sim-one': (el) => simSegment(el.dataset.seg),
+    'gm-sim-cpu': () => { const st = weekStatus(state.data, currentWeek(state.data)); simMany(st.pending.filter(({ seg }) => cpuOnly(seg)), 'CPU-only matches'); },
+    'gm-sim-all': async () => {
+      const st = weekStatus(state.data, currentWeek(state.data));
+      if (!(await confirmDialog(`Let the app decide all ${st.pending.length} remaining matches? Winners are based on overall rating, momentum and a bit of luck.`, { okLabel: '🎲 Sim them all' }))) return;
+      simMany(weekStatus(state.data, currentWeek(state.data)).pending, `match${st.pending.length === 1 ? '' : 'es'}`);
+    },
     'gm-plan': () => {
       const d = state.data;
       ui.plan = planWeek(d, { week: currentWeek(d) + 1 });

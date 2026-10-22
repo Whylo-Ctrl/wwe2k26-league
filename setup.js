@@ -1,14 +1,14 @@
 // First-run setup: a simple step-by-step that builds the league before
 // showing the rest of the app.
 
-import { state, commit, refresh, uid, saveAdmin, guessRepo, getMember, getBrand, replaceData, tokenUrl, testGithub, publish, githubReady, autoSaveOn } from './store.js';
+import { state, commit, refresh, uid, getMember, getBrand, replaceData, keepStorage, markBackedUp } from './store.js';
 import { today, currentReign } from './stats.js';
 import { esc, options, field, input, formValues, toast, avatar, brandChip, superstarOptions } from './ui.js';
 import { PRESETS } from './titles.js';
 import { gmSettings, showDay, DAY_NAMES } from './gm.js';
 
 const PLATFORMS = ['PS5', 'Xbox Series X|S', 'PC (Steam)', 'PS4', 'Xbox One'];
-const STEPS = ['League', 'Brands', 'Members', 'Superstars', 'Titles', 'Shows', 'Save', 'Done'];
+const STEPS = ['League', 'Brands', 'Members', 'Superstars', 'Titles', 'Shows', 'Done'];
 const BRAND_CHOICES = [
   { id: 'raw', name: 'Raw', color: '#e3242b' },
   { id: 'smackdown', name: 'SmackDown', color: '#1f6fff' },
@@ -52,7 +52,7 @@ function stepLeague() {
       ${field('Discord invite link (optional)', input('discordInvite', L.discordInvite, 'type="url" placeholder="https://discord.gg/…"'), 'Shows a "Join Discord" button on the site.')}
     </form>
     ${nav({ form: 'wiz-form', back: false })}
-    <p class="muted small center">Just want to look around? <a href="#" data-act="wiz-demo">Load the demo league</a> instead.</p>`;
+    <p class="muted small center">Moving from another device? <label class="link-like">Restore a backup<input type="file" accept="application/json,.json" data-change="wiz-restore" hidden></label> · Just looking? <a href="#" data-act="wiz-demo">Try the demo league</a></p>`;
 }
 
 function stepBrands() {
@@ -187,42 +187,6 @@ function stepShows() {
     ${nav({ form: 'wiz-form', next: 'Finish' })}`;
 }
 
-function stepSave() {
-  const g = guessRepo() || {};
-  const a = state.admin;
-  const owner = a.owner || g.owner || '';
-  const repo = a.repo || g.repo || '';
-  if (autoSaveOn()) {
-    return `<h1>Saving is on ✓</h1>
-      <p class="wiz-lead">Your league is connected to <strong>${esc(owner)}/${esc(repo)}</strong>. Every change saves by itself, and everyone who opens the site sees it within about a minute.</p>
-      ${nav({ nextAct: 'wiz-next' })}`;
-  }
-  return `<h1>Save it for everyone</h1>
-    <p class="wiz-lead">Right now your league only lives on this device. Connect it to your GitHub repo once, and from then on <strong>every change saves by itself</strong>. Everyone who opens the site sees the latest.</p>
-    <div class="wiz-card">
-      <ol class="wiz-steps">
-        <li><a class="btn btn-primary" href="${esc(tokenUrl(owner))}" target="_blank" rel="noopener">Open GitHub to make a save key ↗</a><div class="muted small">GitHub fills in the details for you.</div></li>
-        <li>Under <strong>Repository access</strong>, choose <strong>Only select repositories</strong>, then pick <strong>${esc(repo || 'your league repo')}</strong>.</li>
-        <li>Scroll down, click <strong>Generate token</strong>, then copy the key it shows you.</li>
-        <li>Paste it here:</li>
-      </ol>
-      <form id="wiz-form" class="form" data-step="save">
-        <input name="token" type="password" placeholder="github_pat_…" autocomplete="off" required>
-        <details ${owner && repo ? '' : 'open'}><summary class="muted small">Repo: ${esc(owner || '?')}/${esc(repo || '?')} (change)</summary>
-          <div class="grid-form" style="margin-top:8px">
-            ${field('GitHub username', input('owner', owner, 'autocapitalize="off" autocomplete="off"'))}
-            ${field('Repository name', input('repo', repo, 'autocapitalize="off" autocomplete="off"'))}
-          </div>
-        </details>
-        <p class="muted tiny">The key is stored only in this browser. Don't share it or paste it in Discord. It lasts a year, and you can make a new one any time in Settings → Saving.</p>
-      </form>
-    </div>
-    <div class="wiz-nav">
-      <button type="button" class="btn btn-ghost" data-act="wiz-back">← Back</button>
-      <span class="row gap"><button type="button" class="btn btn-ghost" data-act="wiz-next">Skip for now</button><button type="submit" form="wiz-form" class="btn btn-primary btn-lg">Connect & save →</button></span>
-    </div>`;
-}
-
 function stepDone() {
   const d = state.data;
   return `<div class="wiz-done">
@@ -231,14 +195,14 @@ function stepDone() {
     <p class="wiz-lead">${d.members.length} members · ${d.superstars.length} superstars · ${d.championships.length} titles · ${d.brands.length} brand${d.brands.length === 1 ? '' : 's'}</p>
     <button class="btn btn-primary btn-lg" data-act="wiz-finish" data-to="#/gm">🎲 Book Week 1 with the GM</button>
     <div class="wiz-card wiz-next-steps">
-      <h3>${autoSaveOn() ? 'One more thing' : 'Two more things'} (when you're ready)</h3>
-      <ol>
-        ${autoSaveOn() ? '' : '<li><strong>Save it for everyone.</strong> Right now your league is only on this device. <a href="#" data-act="wiz-finish" data-to="#/settings?tab=github">Turn on saving</a> (about 2 minutes).</li>'}
-        <li><strong>Connect Discord</strong> so cards and results post to your channels. <a href="#" data-act="wiz-finish" data-to="#/settings?tab=discord">Add a channel</a></li>
-      </ol>
-      ${autoSaveOn() ? '<p class="small text-good" style="margin:8px 0 0">✓ Saving is on. Every change you make saves for everyone automatically.</p>' : ''}
+      <h3>Good to know</h3>
+      <ul>
+        <li>Your league is <strong>saved on this device</strong> automatically. Anyone else who opens the site gets their own league.</li>
+        <li>Switching phones or computers? Use <a href="#" data-act="wiz-finish" data-to="#/settings?tab=backup">Settings → Backup</a> to download your league and restore it on the other device.</li>
+        <li>Want cards and results posted in Discord? <a href="#" data-act="wiz-finish" data-to="#/settings?tab=discord">Add a Discord channel</a>.</li>
+      </ul>
     </div>
-    <p class="muted small"><a href="#" data-act="wiz-finish" data-to="#/">Take me to the home page</a></p>
+    <p class="muted small"><a href="#" data-act="wiz-finish" data-to="#/help">📖 Read how it all works</a> · <a href="#" data-act="wiz-finish" data-to="#/">Take me to the home page</a></p>
   </div>`;
 }
 
@@ -246,7 +210,7 @@ export default {
   render() {
     const d = state.data;
     if (ui.step === null) ui.step = firstStep(d);
-    const body = [stepLeague, stepBrands, stepMembers, stepSuperstars, stepTitles, stepShows, stepSave, stepDone][ui.step]();
+    const body = [stepLeague, stepBrands, stepMembers, stepSuperstars, stepTitles, stepShows, stepDone][ui.step]();
     return `<div class="wizard">${ui.step < STEPS.length - 1 ? progress() : ''}${body}
       ${ui.step < STEPS.length - 1 ? '<p class="center"><a href="#" class="muted small" data-act="wiz-skip">Skip setup and show me everything</a></p>' : ''}</div>`;
   },
@@ -310,26 +274,8 @@ export default {
           d.settings.defaultDeadlineDays = Number(v.deadline) || 7;
           d.league.setupDone = true;
         });
+        keepStorage();
         go(6);
-      } else if (step === 'save') {
-        const btn = document.querySelector('button[form=wiz-form]');
-        const token = String(v.token || '').trim();
-        if (!token) { toast('Paste the key from GitHub first', 'error'); return; }
-        if (!v.owner || !v.repo) { toast('Fill in your GitHub username and repo name', 'error'); return; }
-        saveAdmin({ token, owner: v.owner.trim(), repo: v.repo.trim(), branch: state.admin.branch || 'main', path: state.admin.path || 'league.json', autoSave: true });
-        if (btn) { btn.disabled = true; btn.textContent = 'Connecting…'; }
-        (async () => {
-          try {
-            await testGithub();
-            let r = await publish({ message: 'League setup' });
-            if (r && r.conflict) r = await publish({ message: 'League setup', force: true });
-            toast('Connected! Your league is saved for everyone.');
-            go(7);
-          } catch (err) {
-            toast(err.message, 'error', 8000);
-            if (btn) { btn.disabled = false; btn.textContent = 'Connect & save →'; }
-          }
-        })();
       }
     });
     // picking a champion ticks that title
@@ -368,6 +314,25 @@ export default {
       commit((d) => { for (const name of names) d.superstars.push({ id: uid('ss'), name, memberId: null, brandId: v.brandId, gender: v.gender, alignment: 'Face', status: 'Active' }); });
       toast(`Added ${names.length} CPU superstar${names.length === 1 ? '' : 's'}`);
     });
+  },
+  onChange: {
+    'wiz-restore': (el) => {
+      const file = el.files && el.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!data || typeof data !== 'object' || !data.league) throw new Error('That file is not a league backup.');
+          data.league.setupDone = true;
+          replaceData(data);
+          ui.step = null;
+          location.hash = '#/';
+          toast(`${data.league.name || 'League'} restored on this device`);
+        } catch (e) { toast(e.message || 'Could not read that file', 'error'); }
+      };
+      reader.readAsText(file);
+    },
   },
   actions: {
     'wiz-back': () => go(ui.step - 1),
@@ -421,10 +386,3 @@ export default {
     'wiz-finish': (el) => { if (!state.data.league.setupDone) commit((d) => { d.league.setupDone = true; }); ui.step = null; location.hash = el.dataset.to || '#/'; },
   },
 };
-
-export function startSetup() {
-  const g = guessRepo();
-  saveAdmin({ on: true, ...(g && !state.admin.owner ? { owner: g.owner, repo: g.repo } : {}) });
-  ui.step = null;
-  location.hash = '#/setup';
-}

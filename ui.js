@@ -247,6 +247,7 @@ export function toast(msg, kind = 'ok', ms = 3500) {
   const host = dialogs.length ? dialogs[dialogs.length - 1] : document.body;
   let wrap = host.querySelector(':scope > .toasts');
   if (!wrap) { wrap = document.createElement('div'); wrap.className = 'toasts'; wrap.setAttribute('role', 'status'); host.appendChild(wrap); }
+  while (wrap.children.length >= 3) wrap.firstElementChild.remove(); // keep it to a few at a time
   const t = document.createElement('div');
   t.className = `toast toast-${kind}`;
   t.textContent = msg;

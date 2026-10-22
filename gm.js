@@ -14,9 +14,18 @@ import {
 } from './stats.js';
 
 export const PLE_NAMES = [
-  'Royal Rumble', 'Elimination Chamber', 'WrestleMania', 'Backlash', 'King & Queen of the Ring', 'Night of Champions',
+  'Royal Rumble', 'Elimination Chamber', 'WrestleMania', 'Backlash', 'Money in the Bank', 'King & Queen of the Ring',
   'SummerSlam', 'Clash in Paris', 'Crown Jewel', 'Survivor Series', "Saturday Night's Main Event",
 ];
+
+// PLEs with something special on the card (matched by name, so renamed PLEs still work if the name fits).
+export function pleKind(name) {
+  const n = String(name || '').toLowerCase();
+  if (n.includes('rumble')) return 'rumble';
+  if (n.includes('money in the bank')) return 'mitb';
+  if (n.includes('of the ring')) return 'kotr';
+  return null;
+}
 
 export const GM_DEFAULTS = {
   matchesPerShow: 4,
@@ -31,7 +40,7 @@ export const GM_DEFAULTS = {
   promos: true,
   autoStorylines: true,
   autopilot: false,
-  autoPublish: true,
+  autoSimOverdue: false,
   showDays: {},
 };
 
@@ -118,6 +127,15 @@ export function nextPLEWeek(data, w) {
   const every = Number(gmSettings(data).pleEvery) || 0;
   if (!every) return null;
   return Math.ceil((w + 0.5) / every) * every;
+}
+
+export function findPleWeek(data, fromWeek, pattern) {
+  const every = Number(gmSettings(data).pleEvery) || 0;
+  if (!every) return null;
+  for (let w = fromWeek + 1; w <= fromWeek + every * 12; w++) {
+    if (isPLEWeek(data, w) && pattern.test(pleNameFor(data, w))) return w;
+  }
+  return nextPLEWeek(data, fromWeek + 1);
 }
 
 // ---------- titles ----------
@@ -273,6 +291,9 @@ function holderText(ctx, ids, teamId) {
 
 // Book a title match for title `t` on `show`. Returns the segment or null.
 function bookTitleMatch(ctx, show, t, booked, { isPLE, forcedChallenger = null, excludeChallenger = null } = {}) {
+  // a contender saved for a specific PLE (Royal Rumble / King of the Ring winners) waits for that week
+  const reserved = !!(t.contender && t.contender.forWeek && ctx.week < Number(t.contender.forWeek));
+  const reservedIds = new Set(reserved ? t.contender.ids || [] : []);
   const tier = titleTier(ctx.data, t);
   const reign = ctx.champs.get(t.id);
   const div = divisionOf(t);
@@ -325,14 +346,16 @@ function bookTitleMatch(ctx, show, t, booked, { isPLE, forcedChallenger = null, 
   const champ = reign.holders[0];
   if (!bookable(ctx, champ) || booked.has(champ)) return null;
   const champMember = ctx.memberOf(champ);
-  const candidates = pool.filter((x) => x.id !== excludeChallenger && !(champMember && ctx.memberOf(x.id) === champMember)
+  const candidates = pool.filter((x) => x.id !== excludeChallenger && !reservedIds.has(x.id) && !(champMember && ctx.memberOf(x.id) === champMember)
     && (ctx.hasMember(x.id) || champMember || ctx.s.allowCpuVsCpu));
   let chalId = null, reason = '', type = 'Normal';
   // 1) a #1 contender who earned it
   if (forcedChallenger && candidates.some((x) => x.id === forcedChallenger)) chalId = forcedChallenger;
-  if (!chalId && t.contender && t.contender.ids && t.contender.ids.length === 1 && candidates.some((x) => x.id === t.contender.ids[0])) {
+  if (!chalId && !reserved && t.contender && t.contender.ids && t.contender.ids.length === 1 && candidates.some((x) => x.id === t.contender.ids[0])) {
     chalId = t.contender.ids[0];
-    reason = `${ctx.name(chalId)} earned this as the #1 contender. Now it's time to cash in.`;
+    reason = t.contender.reason
+      ? `${ctx.name(chalId)} earned this shot as the ${t.contender.reason}. Now it's time to collect.`
+      : `${ctx.name(chalId)} earned this as the #1 contender. Now it's time to cash in.`;
   }
   // 2) unfinished business from the last title match
   if (!chalId) {
@@ -523,6 +546,153 @@ function openingPromo(ctx, show) {
   return { id: uid('p'), kind: 'promo', title: titleText, superstarIds: ids.slice(0, 2), text, link: '', gm: { kind: 'promo', stakes: 0 } };
 }
 
+
+// ---------- big-event specials ----------
+const DIV_WORD = { M: "Men's", F: "Women's" };
+
+function specialPool(ctx, booked, div) {
+  const holders = new Set((ctx.data.briefcases || []).map((b) => b.holder));
+  return ctx.data.superstars.filter((x) => bookable(ctx, x.id) && !booked.has(x.id) && x.brandId && x.gender === div
+    && !ctx.champTitles.has(x.id) && (ctx.hasMember(x.id) || ctx.s.allowCpuOpponents))
+    .map((x) => ({ x, holder: holders.has(x.id) }));
+}
+
+// Royal Rumble or Money in the Bank ladder match for one division.
+function bookMultiSpecial(ctx, show, booked, div, kind) {
+  let pool = specialPool(ctx, booked, div);
+  if (kind === 'mitb') pool = pool.filter((p) => !p.holder);
+  const list = pool.map((p) => p.x).sort((a, b) => (ctx.hasMember(b.id) ? 1 : 0) - (ctx.hasMember(a.id) ? 1 : 0) || ctx.val(b.id) - ctx.val(a.id));
+  const max = kind === 'rumble' ? 30 : 8;
+  // one entrant per member (nobody can control two wrestlers in the same match)
+  const usedMembers = new Set();
+  const entrants = [];
+  for (const x of list) {
+    const m = ctx.memberOf(x.id);
+    if (m && usedMembers.has(m)) continue;
+    if (m) usedMembers.add(m);
+    entrants.push(x);
+    if (entrants.length >= max) break;
+  }
+  if (entrants.length < 4 || (!entrants.some((x) => ctx.hasMember(x.id)))) return null;
+  const word = DIV_WORD[div];
+  const wm = kind === 'rumble' ? pleNameFor(ctx.data, findPleWeek(ctx.data, ctx.week, /wrestlemania/i) || ctx.week) : '';
+  const seg = mkMatch('multi', kind === 'rumble' ? 'Royal Rumble' : 'Money in the Bank', entrants.map((x) => ({ ids: [x.id] })), {
+    kind: 'special',
+    reason: kind === 'rumble'
+      ? `${entrants.length} superstars, one winner. The winner earns a world title match at ${wm || 'the next big PLE'}.`
+      : `${entrants.length} superstars climb for the briefcase: a guaranteed title shot, any time, anywhere, for the next 12 weeks.`,
+    stakes: kind === 'rumble' ? 95 : 90,
+  }, { name: kind === 'rumble' ? `${word} Royal Rumble` : `${word} Money in the Bank Ladder Match`, special: { kind, division: div } });
+  entrants.forEach((x) => booked.add(x.id));
+  return seg;
+}
+
+// King & Queen of the Ring: semifinals the week before, the final at the PLE.
+function bookKotrSemis(ctx, shows, booked, div, pleWeek) {
+  const list = specialPool(ctx, booked, div).map((p) => p.x)
+    .sort((a, b) => (ctx.hasMember(b.id) ? 1 : 0) - (ctx.hasMember(a.id) ? 1 : 0) || ctx.val(b.id) - ctx.val(a.id));
+  // pick 4, avoiding two superstars of the same member in the same semifinal where possible
+  const four = list.slice(0, 4);
+  if (four.length < 4) return [];
+  const clash = ([a, b]) => { const m = ctx.memberOf(a.id); return m && m === ctx.memberOf(b.id); };
+  const options = [[[0, 3], [1, 2]], [[0, 2], [1, 3]], [[0, 1], [2, 3]]].map((o) => o.map(([i, j]) => [four[i], four[j]]));
+  const pairs = options.find((o) => !o.some(clash)) || options[0];
+  const crown = div === 'F' ? 'Queen' : 'King';
+  const out = [];
+  pairs.forEach(([a, b], slot) => {
+    const show = shows.find((sh) => sh.brandId === a.brandId) || shows[0];
+    const seg = mkMatch('singles', 'Normal', [{ ids: [a.id] }, { ids: [b.id] }], {
+      kind: 'special', reason: `${crown} of the Ring semifinal. The winner goes to the final at ${pleNameFor(ctx.data, pleWeek)}.`, stakes: 60,
+    }, { name: `${crown} of the Ring Semifinal`, special: { kind: 'kotr', round: 'semi', division: div, pleWeek, slot } });
+    booked.add(a.id); booked.add(b.id);
+    show.card.push(seg);
+    out.push(seg);
+  });
+  return out;
+}
+
+function bookKotrFinal(ctx, show, booked, div) {
+  const semis = [];
+  for (const ev of ctx.data.events) for (const seg of ev.card) {
+    const sp = seg.special;
+    if (sp && sp.kind === 'kotr' && sp.round === 'semi' && sp.division === div && Number(sp.pleWeek) === ctx.week) semis.push(seg);
+  }
+  let finalists = semis.filter((sg) => decisive(sg.result)).map((sg) => sg.sides[Number(sg.result.winnerSide)].ids[0]).filter((id) => bookable(ctx, id) && !booked.has(id));
+  const crown = div === 'F' ? 'Queen' : 'King';
+  let reason = `The ${crown} of the Ring final. The winner is crowned and earns a world title shot at ${pleNameFor(ctx.data, findPleWeek(ctx.data, ctx.week, /summerslam/i) || ctx.week)}.`;
+  if (finalists.length < 2) {
+    // no semifinals on record: crown it in one night between the top two
+    const top = specialPool(ctx, booked, div).map((p) => p.x).filter((x) => !finalists.includes(x.id))
+      .sort((a, b) => (ctx.hasMember(b.id) ? 1 : 0) - (ctx.hasMember(a.id) ? 1 : 0) || ctx.val(b.id) - ctx.val(a.id));
+    while (finalists.length < 2 && top.length) finalists.push(top.shift().id);
+    if (semis.length) reason += ' (Semifinal results were missing, so the GM picked the finalists.)';
+  }
+  if (finalists.length < 2) return null;
+  const m1 = ctx.memberOf(finalists[0]), m2 = ctx.memberOf(finalists[1]);
+  if (m1 && m1 === m2) reason += ' Both finalists belong to the same member, so sim this one.';
+  const seg = mkMatch('singles', 'Normal', finalists.map((id) => ({ ids: [id] })), { kind: 'special', reason, stakes: 92 },
+    { name: `${crown} of the Ring Final`, special: { kind: 'kotr', round: 'final', division: div } });
+  finalists.forEach((id) => booked.add(id));
+  return seg;
+}
+
+// ---------- match simulator ----------
+const NO_DQ = new Set(['Extreme Rules', 'No Holds Barred', 'Falls Count Anywhere', 'Hell in a Cell', 'Steel Cage', 'Tables', 'Ladder', 'TLC',
+  'Backstage Brawl', 'Bloodline Rules', 'Underground', 'Last Man Standing', 'I Quit', 'Inferno', 'Dumpster', 'Casket', 'Ambulance',
+  'Money in the Bank', 'Royal Rumble', 'Battle Royal', 'Elimination Chamber', 'WarGames', '3 Stages of Hell', 'Iron Man']);
+
+function simMethod(type, rng) {
+  if (['Ladder', 'TLC', 'Money in the Bank'].includes(type)) return 'Item retrieval';
+  if (['Royal Rumble', 'Battle Royal', 'Elimination Chamber', 'Gauntlet', 'Gauntlet Turmoil', 'Gauntlet Eliminator'].includes(type)) return 'Elimination';
+  if (['Submission', 'I Quit'].includes(type)) return 'Submission';
+  if (type === 'Last Man Standing') return 'Knockout';
+  if (['Ambulance', 'Casket', 'Inferno', 'Dumpster', 'Tables'].includes(type)) return 'Other';
+  if (type === 'Steel Cage' && rng() < 0.4) return 'Escape';
+  const x = rng();
+  if (x < 0.78) return 'Pinfall';
+  if (x < 0.92) return 'Submission';
+  if (NO_DQ.has(type)) return 'Pinfall';
+  return x < 0.97 ? 'Disqualification' : type === 'Normal' ? 'Count-out' : 'Pinfall';
+}
+
+// Pick a believable winner, finish and star rating for a match nobody played.
+export function simulateMatch(data, ev, seg, rng = Math.random) {
+  const recs = records(data, { season: data.league.season });
+  const champs = new Set();
+  for (const t of data.championships) { const r = currentReign(data, t.id); if (r) r.holders.forEach((id) => champs.add(id)); }
+  const strength = (id) => {
+    const x = data.superstars.find((y) => y.id === id) || {};
+    const rec = recordOf(recs, id);
+    const form = rec.form.slice(-5).filter((f) => f === 'W').length;
+    return (Number(x.overall) || 75) + Math.max(-4, Math.min(4, rec.streak)) + form * 0.5 + (champs.has(id) ? 2 : 0);
+  };
+  const sides = seg.sides.map((sd, i) => ({ i, ids: sd.ids, str: sd.ids.length ? sd.ids.reduce((t, id) => t + strength(id), 0) / sd.ids.length + (sd.teamId ? 2 : 0) : -Infinity }))
+    .filter((sd) => sd.ids.length);
+  if (sides.length < 2) return null;
+  const weights = sides.map((sd) => Math.exp(sd.str / 9));
+  const total = weights.reduce((a, b) => a + b, 0);
+  const type = seg.type || 'Normal';
+  // the occasional draw in a regular one-on-one
+  if (sides.length === 2 && type === 'Normal' && !seg.special && !seg.titleId && !seg.contenderFor && rng() < 0.02) {
+    return { winnerSide: null, draw: true, nc: false, method: '', rating: Math.round((2.5 + rng() * 1.5) * 4) / 4, link: '', notes: 'Simulated: time-limit draw.', simulated: true };
+  }
+  let roll = rng() * total, win = sides[0];
+  for (let k = 0; k < sides.length; k++) { roll -= weights[k]; if (roll <= 0) { win = sides[k]; break; } }
+  const pWin = weights[sides.indexOf(win)] / total;
+  let rating = 2.75;
+  if (seg.titleId) rating += 0.5;
+  if (ev.type === 'ple') rating += 0.5;
+  if (type !== 'Normal') rating += 0.4;
+  if (sides.length === 2) rating += 0.5 * (1 - Math.abs(pWin - 0.5) * 2);
+  rating += rng() * 1.25 - 0.6;
+  rating = Math.max(1, Math.min(5, Math.round(rating * 4) / 4));
+  const upset = sides.length === 2 && pWin < 0.35;
+  return {
+    winnerSide: win.i, draw: false, nc: false, method: simMethod(type, rng), rating, link: '',
+    notes: upset ? 'Simulated: an upset!' : 'Simulated.', simulated: true,
+  };
+}
+
 // Plan (but don't save) the next week. Returns { week, isPLE, shows, notes, seed }.
 export function planWeek(data, { week = currentWeek(data) + 1, seed = Date.now() } = {}) {
   const rng = rngFrom(seed);
@@ -551,6 +721,14 @@ export function planWeek(data, { week = currentWeek(data) + 1, seed = Date.now()
   const showFor = (brandId) => (isPLE ? shows[0] : shows.find((sh) => sh.brandId === brandId));
   const add = (show, seg) => { if (seg) show.card.push(seg); return seg; };
 
+  // 0) King & Queen of the Ring: semifinals the week before, finals at the PLE (booked first so the entrants stay free)
+  if (isPLE && pleKind(shows[0].name) === 'kotr') for (const div of ['M', 'F']) add(shows[0], bookKotrFinal(ctx, shows[0], booked, div));
+  // Money in the Bank ladder matches headline their PLE, so they get first pick of the roster
+  if (isPLE && pleKind(shows[0].name) === 'mitb') {
+    for (const div of ['M', 'F']) if (!add(shows[0], bookMultiSpecial(ctx, shows[0], booked, div, 'mitb')) && div === 'M') notes.push("Not enough available superstars for a Money in the Bank ladder match.");
+  }
+  if (pleSoon && pleKind(nextPle) === 'kotr') for (const div of ['M', 'F']) bookKotrSemis(ctx, shows, booked, div, week + 1);
+
   // 1) championships
   const titles = data.championships.filter((t) => !t.retired && !ctx.pendingTitle.has(t.id));
   for (const t of titles.sort((a, b) => (a.order || 0) - (b.order || 0))) {
@@ -568,6 +746,12 @@ export function planWeek(data, { week = currentWeek(data) + 1, seed = Date.now()
     const since = lastDef ? lastDef.ev.date : reign ? reign.wonAt : null;
     const weeks = since ? daysBetween(since, ctx.planDate) / 7 : 99;
     if (!reign || weeks >= Number(s.tvTitleEvery || 2) - 0.2) add(show, bookTitleMatch(ctx, show, t, booked, { isPLE: false }));
+  }
+
+  // 1b) big-event specials
+  if (isPLE) {
+    const kind = pleKind(shows[0].name);
+    if (kind === 'rumble') for (const div of ['M', 'F']) if (!add(shows[0], bookMultiSpecial(ctx, shows[0], booked, div, kind)) && div === 'M') notes.push('Not enough available superstars left for a Royal Rumble.');
   }
 
   // 2) #1 contender matches the week before a PLE
@@ -705,9 +889,64 @@ export function undoGmEffects(data, seg) {
   for (const sl of data.storylines) sl.updates = sl.updates.filter((u) => u.matchId !== seg.id);
   if (fx.createdStoryline) data.storylines = data.storylines.filter((sl) => sl.id !== fx.createdStoryline);
   if (fx.concluded) { const sl = data.storylines.find((x) => x.id === fx.concluded); if (sl) sl.status = 'active'; }
-  if (fx.contenderSet) { const t = data.championships.find((x) => x.id === fx.contenderSet); if (t && t.contender && t.contender.matchId === seg.id) t.contender = null; }
+  if (fx.contenderSet) { const t = data.championships.find((x) => x.id === fx.contenderSet); if (t && t.contender && t.contender.matchId === seg.id) t.contender = fx.contenderPrev || null; }
   if (fx.contenderCleared) { const t = data.championships.find((x) => x.id === fx.contenderCleared.titleId); if (t && !t.contender) t.contender = fx.contenderCleared.prev; }
+  if (fx.briefcase) data.briefcases = (data.briefcases || []).filter((b) => b.id !== fx.briefcase);
+  if (fx.royalty) data.royalty = (data.royalty || []).filter((r) => r.id !== fx.royalty);
+  if (fx.cashIn) {
+    // take back the surprise cash-in match and give the briefcase back
+    for (const ev of data.events) {
+      const c = ev.card.find((x) => x.id === fx.cashIn.segId);
+      if (c) { undoGmEffects(data, c); applyResult(data, ev, c, null); ev.card = ev.card.filter((x) => x.id !== c.id); }
+    }
+    if (!(data.briefcases || []).some((b) => b.id === fx.cashIn.briefcase.id)) (data.briefcases ||= []).push(fx.cashIn.briefcase);
+  }
   delete seg.gmFx;
+}
+
+function worldTitleFor(data, superstarId) {
+  const x = data.superstars.find((y) => y.id === superstarId);
+  if (!x) return null;
+  const div = x.gender === 'F' ? 'women' : 'men';
+  const worlds = data.championships.filter((t) => !t.retired && t.kind !== 'tag' && (t.division === div || t.division === 'open') && titleTier(data, t) === 'world');
+  return worlds.find((t) => t.brandId === x.brandId) || worlds.find((t) => !t.brandId) || worlds[0] || null;
+}
+
+function setContender(data, t, ids, seg, ev, fx, extra = {}) {
+  fx.contenderSet = t.id;
+  fx.contenderPrev = t.contender || null;
+  t.contender = { ids: [...ids], teamId: null, matchId: seg.id, since: ev.date, ...extra };
+}
+
+// Chance that a briefcase holder cashes in right after a world title match.
+function maybeCashIn(data, ev, seg, fx) {
+  const r = seg.result;
+  const t = data.championships.find((x) => x.id === seg.titleId);
+  if (!t || t.kind === 'tag' || seg.cashIn || !decisive(r) || titleTier(data, t) !== 'world') return;
+  const div = t.division === 'women' ? 'F' : t.division === 'men' ? 'M' : null;
+  const inMatch = new Set(participants(seg));
+  const week = Number(ev.week) || currentWeek(data);
+  const cases = (data.briefcases || []).filter((b) => (!div || b.division === div) && !inMatch.has(b.holder)
+    && data.superstars.some((x) => x.id === b.holder && (x.status || 'Active') === 'Active' && (!t.brandId || x.brandId === t.brandId)));
+  for (const b of cases) {
+    const held = Math.max(0, week - (Number(b.week) || week));
+    let p = 0.12 + 0.07 * held + ((seg.type || 'Normal') !== 'Normal' ? 0.2 : 0);
+    if (held >= 12) p = 1;
+    if (Math.random() >= Math.min(p, 0.85)) continue;
+    const champSide = seg.sides[Number(r.winnerSide)];
+    const nm = (id) => (data.superstars.find((x) => x.id === id) || {}).name || '?';
+    const c = {
+      id: uid('m'), kind: 'match', format: 'singles', type: 'Normal', name: 'Money in the Bank Cash-In', titleId: t.id, stipulation: '',
+      deadline: ev.deadline || null, sides: [{ ids: [...champSide.ids], teamId: null }, { ids: [b.holder], teamId: null }], result: null,
+      gm: { kind: 'cashin', reason: `💼 ${nm(b.holder)} cashes in Money in the Bank on a worn-out ${champSide.ids.map(nm).join(' & ')} right after the match!`, stakes: 130 },
+      cashIn: b.id,
+    };
+    const idx = ev.card.indexOf(seg);
+    ev.card.splice(idx + 1, 0, c);
+    data.briefcases = data.briefcases.filter((x) => x.id !== b.id);
+    fx.cashIn = { segId: c.id, briefcase: b };
+    return;
+  }
 }
 
 function afterResult(data, ev, seg) {
@@ -719,8 +958,32 @@ function afterResult(data, ev, seg) {
   if (seg.contenderFor && decisive(r)) {
     const t = data.championships.find((x) => x.id === seg.contenderFor);
     const side = seg.sides[Number(r.winnerSide)];
-    if (t && side) { t.contender = { ids: [...side.ids], teamId: side.teamId || null, matchId: seg.id, since: ev.date }; fx.contenderSet = t.id; }
+    if (t && side) { setContender(data, t, side.ids, seg, ev, fx); t.contender.teamId = side.teamId || null; }
   }
+  // big-event payoffs
+  const sp = seg.special;
+  if (sp && decisive(r)) {
+    const winner = seg.sides[Number(r.winnerSide)].ids[0];
+    const week = Number(ev.week) || currentWeek(data);
+    if (sp.kind === 'rumble') {
+      const t = worldTitleFor(data, winner);
+      const fw = findPleWeek(data, week, /wrestlemania/i);
+      if (t) setContender(data, t, [winner], seg, ev, fx, { reason: 'Royal Rumble winner', forWeek: fw, forPle: fw ? pleNameFor(data, fw) : '' });
+    } else if (sp.kind === 'mitb') {
+      const id = uid('case');
+      (data.briefcases ||= []).push({ id, holder: winner, division: sp.division, since: ev.date, week, matchId: seg.id, season: data.league.season });
+      fx.briefcase = id;
+    } else if (sp.kind === 'kotr' && sp.round === 'final') {
+      const id = uid('crown');
+      (data.royalty ||= []).push({ id, holder: winner, division: sp.division, title: sp.division === 'F' ? 'Queen of the Ring' : 'King of the Ring', season: data.league.season, matchId: seg.id, date: ev.date });
+      fx.royalty = id;
+      const t = worldTitleFor(data, winner);
+      const fw = findPleWeek(data, week, /summerslam/i);
+      if (t) setContender(data, t, [winner], seg, ev, fx, { reason: sp.division === 'F' ? 'Queen of the Ring' : 'King of the Ring', forWeek: fw, forPle: fw ? pleNameFor(data, fw) : '' });
+    }
+  }
+  // a briefcase holder might strike
+  if (seg.titleId) maybeCashIn(data, ev, seg, fx);
   // contender used their shot
   if (seg.titleId) {
     const t = data.championships.find((x) => x.id === seg.titleId);
@@ -754,6 +1017,7 @@ function afterResult(data, ev, seg) {
     }
   }
   if (Object.keys(fx).length) seg.gmFx = fx;
+  return fx;
 }
 
 // Use this (not applyResult) to save or clear a result: it also keeps titles,
@@ -761,8 +1025,13 @@ function afterResult(data, ev, seg) {
 export function recordResult(data, ev, seg, result) {
   undoGmEffects(data, seg);
   const out = applyResult(data, ev, seg, result);
-  if (result) afterResult(data, ev, seg);
-  return out;
+  const fx = result ? afterResult(data, ev, seg) || {} : {};
+  const extra = {};
+  if (fx.cashIn) extra.cashIn = ev.card.find((x) => x.id === fx.cashIn.segId) || null;
+  if (fx.briefcase) extra.briefcase = true;
+  if (fx.royalty) extra.royalty = true;
+  if (seg.special && seg.special.kind === 'rumble' && fx.contenderSet) extra.rumbleWinner = true;
+  return out || Object.keys(extra).length ? { ...(out || {}), ...extra } : null;
 }
 
 export function describePlan(plan) {

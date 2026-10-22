@@ -93,9 +93,13 @@ function resultLine(seg) {
   else {
     const w = Number(r.winnerSide);
     const losers = seg.sides.filter((s, i) => i !== w && s.ids.length).map((s) => sideText(s));
-    line = `**${sideText(seg.sides[w])}** def. ${losers.join(', ') || 'TBD'}`;
+    line = `**${sideText(seg.sides[w])}** ${seg.special && seg.special.kind !== 'kotr' ? 'wins' : 'def.'} ${seg.special && seg.special.kind !== 'kotr' ? `(${losers.length + 1} entrants)` : losers.length > 4 ? `${losers.slice(0, 3).join(', ')} and ${losers.length - 3} more` : losers.join(', ') || 'TBD'}`;
+    const sp = seg.special;
+    if (sp && sp.kind === 'mitb') line += '\n💼 **Wins the Money in the Bank briefcase!**';
+    if (sp && sp.kind === 'rumble') line += '\n🏆 **Earns a world title match at WrestleMania!**';
+    if (sp && sp.kind === 'kotr' && sp.round === 'final') line += `\n👑 **Crowned ${sp.division === 'F' ? 'Queen' : 'King'} of the Ring!**`;
   }
-  const extra = [r.method && !r.nc && !r.draw ? `via ${r.method}` : '', r.rating ? stars(r.rating) : ''].filter(Boolean).join(' · ');
+  const extra = [r.method && !r.nc && !r.draw ? `via ${r.method}` : '', r.rating ? stars(r.rating) : '', r.simulated ? '🎲 simulated' : ''].filter(Boolean).join(' · ');
   if (extra) line += `\n${extra}`;
   if (seg.titleId) {
     const t = getTitle(seg.titleId);
@@ -203,6 +207,40 @@ export function titleChangeMessage(reign) {
       if (img && /^https:/.test(img)) embed.thumbnail = { url: img };
       const payload = withPings({ ...base(), embeds: [embed] }, ping, pingIdsFor(reign.holders), '');
       return { payloads: [payload], text: `**${embed.title}**\n${embed.description}` };
+    },
+  };
+}
+
+export function cashInMessage(ev, seg) {
+  const ids = seg.sides.flatMap((s) => s.ids);
+  return {
+    title: 'Money in the Bank cash-in!',
+    purpose: 'titles',
+    canPing: pingIdsFor(ids).length > 0,
+    build({ ping }) {
+      const t = getTitle(seg.titleId);
+      const embed = {
+        title: '💼 MONEY IN THE BANK CASH-IN!',
+        description: trunc(`${seg.gm && seg.gm.reason ? seg.gm.reason.replace(/^💼 /, '') : ''}\n\n${seg.sides.map(sideWithTags).join('\n**vs**\n')}\n🏆 ${t ? t.name : 'Title'} on the line${seg.deadline ? `\n⏰ Play by **${fmtDate(seg.deadline, { weekday: true })}**` : ''}`, 4096),
+        color: 0x22c55e,
+        footer: footer(),
+      };
+      const payload = withPings({ ...base(), embeds: [embed] }, ping, pingIdsFor(ids), '');
+      return { payloads: [payload], text: `**${embed.title}**\n${embed.description}` };
+    },
+  };
+}
+
+export function awardsMessage(season, list, live) {
+  return {
+    title: `Season ${season} awards`,
+    purpose: 'rankings',
+    canPing: false,
+    build() {
+      const fields = list.map((a) => ({ name: trunc(`${a.icon} ${a.title}`, 256), value: trunc(`**${a.label}**\n${a.detail}`, 1024) }));
+      const head = { title: trunc(`🏆 Season ${season} Awards${live ? ' (so far)' : ''}`, 256), description: live ? 'The race so far. Final awards are handed out when the season ends.' : `${state.data.league.name} honors the best of Season ${season}.`, color: GOLD, footer: footer() };
+      const embeds = embedsFromFields(head, fields.length ? fields : [{ name: 'Awards', value: 'No results yet' }]);
+      return { payloads: payloadsFromEmbeds(embeds, { allowed_mentions: { parse: [] } }), text: [`**${head.title}**`, ...fields.map((f) => `${f.name}\n${f.value}\n`)].join('\n') };
     },
   };
 }

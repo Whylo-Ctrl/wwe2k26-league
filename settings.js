@@ -1,21 +1,13 @@
-import { state, isAdmin, commit, refresh, uid, saveAdmin, guessRepo, githubReady, testGithub, reloadFromGithub, replaceData, defaultLeague, DEFAULT_MATCH_TYPES, clone, tokenUrl, scheduleAutoSave } from './store.js';
+import { state, commit, refresh, uid, saveAdmin, replaceData, defaultLeague, DEFAULT_MATCH_TYPES, clone, markBackedUp } from './store.js';
+import { endSeason } from './awards.js';
 import { esc, options, field, input, textarea, formModal, confirmDialog, toast, pageHead, formValues } from './ui.js';
-import { PURPOSES, validWebhook, sendWebhook, post, customMessage } from './discord.js';
+import { PURPOSES, validWebhook, sendWebhook, post, customMessage, awardsMessage } from './discord.js';
 
 const ui = { tab: 'league' };
 const TABS = [
   ['league', 'League'], ['brands', 'Brands'], ['rules', 'Scoring & match types'],
-  ['discord', 'Discord'], ['github', 'Saving'], ['backup', 'Backup & seasons'],
+  ['discord', 'Discord'], ['backup', 'Backup & seasons'],
 ];
-
-function commissionerGate() {
-  return `${pageHead('Commissioner mode', 'Run the league from this device')}
-    <section class="card narrow">
-      <p>Commissioner mode shows all the editing tools on <strong>this device</strong>: booking shows, entering results, managing the roster, posting to Discord.</p>
-      <p class="muted">Turning it on doesn't give anyone power over the league by itself. Changes only go live when they're published with a GitHub token that has access to the league's repo. Visitors without one can't change anything.</p>
-      <button class="btn btn-primary" data-act="set-admin-on">Turn on commissioner mode</button>
-    </section>`;
-}
 
 function leagueTab() {
   const L = state.data.league;
@@ -96,61 +88,30 @@ function discordTab() {
     </section>`;
 }
 
-function githubTab() {
-  const a = state.admin;
-  const g = guessRepo();
-  return `<form class="form card" data-form="github">
-    <p>Saving stores your league in your GitHub repo, so <strong>everyone who opens the site sees the latest</strong>. It needs a one-time "save key" from GitHub:</p>
-    <ol class="steps">
-      <li><a class="btn btn-sm btn-primary" href="${esc(tokenUrl(a.owner || (g ? g.owner : '')))}" target="_blank" rel="noopener">Open GitHub to make a save key ↗</a> (the details are filled in for you)</li>
-      <li>Under <strong>Repository access</strong>, choose <strong>Only select repositories</strong> and pick this league's repo.</li>
-      <li>Click <strong>Generate token</strong>, copy it, and paste it below.</li>
-    </ol>
-    <label class="check"><input type="checkbox" name="autoSave" ${a.autoSave !== false ? 'checked' : ''}> <span><strong>Save automatically.</strong> Every change saves for everyone a few seconds later. If you turn this off, you'll press "Save for everyone" yourself.</span></label>
-    <p class="muted small">The token is saved only in this browser. Don't share it or paste it in Discord. Co-commissioners make their own token (they need to be collaborators on the repo).</p>
-    <div class="grid-form">
-      ${field('GitHub username (owner)', input('owner', a.owner || (g ? g.owner : ''), 'autocomplete="off" autocapitalize="off"'))}
-      ${field('Repository name', input('repo', a.repo || (g ? g.repo : ''), 'autocomplete="off" autocapitalize="off"'))}
-      ${field('Branch', input('branch', a.branch || 'main', 'autocapitalize="off"'))}
-      ${field('Data file path', input('path', a.path || 'league.json', 'autocapitalize="off"'))}
-    </div>
-    ${field('Access token', `<input name="token" type="password" value="${esc(a.token || '')}" autocomplete="off" placeholder="github_pat_…">`)}
-    <div class="row gap wrap">
-      <button class="btn btn-primary" type="submit">Save & test</button>
-      ${githubReady() ? '<button type="button" class="btn btn-ghost" data-act="gh-reload">Reload league from GitHub</button>' : ''}
-      ${a.token ? '<button type="button" class="btn btn-ghost btn-danger-text" data-act="gh-forget">Forget token</button>' : ''}
-    </div>
-  </form>`;
-}
-
 function backupTab() {
   const d = state.data;
   return `
     <section class="card">
+      <h2>Backup & moving devices</h2>
+      <p>Your league is saved in <strong>this browser on this device</strong>. Download a backup now and then. It's your safety net if the browser's data gets cleared, and it's how you move your league to another phone or computer (download here, then restore there).</p>
+      <p class="muted small">${state.lastBackup ? `Last backup: ${esc(new Date(state.lastBackup).toLocaleDateString())}.` : 'You haven\'t downloaded a backup yet.'}</p>
+      <div class="row gap wrap">
+        <button class="btn btn-primary" data-act="backup-export">Download backup</button>
+        <label class="btn btn-ghost">Restore a backup<input type="file" accept="application/json,.json" data-change="backup-import" hidden></label>
+      </div>
+    </section>
+    <section class="card">
       <h2>Seasons</h2>
-      <p>Current season: <strong>${esc(d.league.season)}</strong>. Starting a new season resets standings and power rankings (all-time stats and title histories are kept). Champions keep their belts.</p>
+      <p>Current season: <strong>${esc(d.league.season)}</strong>. Starting a new season locks in this season's <a href="#/awards">awards</a> and resets standings and power rankings. All-time stats and title histories are kept, and champions keep their belts.</p>
       <button class="btn btn-primary" data-act="season-new">Start Season ${Number(d.league.season) + 1}</button>
     </section>
     <section class="card">
-      <h2>Backup</h2>
-      <p class="muted">Download a copy of the whole league, or restore one.</p>
-      <div class="row gap wrap">
-        <button class="btn btn-ghost" data-act="backup-export">Download backup (.json)</button>
-        <label class="btn btn-ghost">Restore from file<input type="file" accept="application/json,.json" data-change="backup-import" hidden></label>
-      </div>
-    </section>
-    <section class="card">
-      <h2>Demo & reset</h2>
-      <p class="muted">Load a sample league to try everything out, or wipe the league and start fresh. Nothing changes for visitors until you publish.</p>
+      <h2>Demo & starting over</h2>
+      <p class="muted">Load a sample league to try everything out, or wipe this device's league and set up a new one. Download a backup first if you want to keep your current league.</p>
       <div class="row gap wrap">
         <button class="btn btn-ghost" data-act="demo-load">Load demo league</button>
-        <button class="btn btn-ghost btn-danger-text" data-act="league-reset">Start a blank league</button>
+        <button class="btn btn-ghost btn-danger-text" data-act="league-reset">Start a new league</button>
       </div>
-    </section>
-    <section class="card">
-      <h2>This device</h2>
-      <p class="muted">Turn off commissioner mode to see the site the way members do.</p>
-      <button class="btn btn-ghost" data-act="set-admin-off">Turn off commissioner mode</button>
     </section>`;
 }
 
@@ -204,12 +165,11 @@ function download(filename, text) {
 
 export default {
   render(params) {
-    if (!isAdmin()) return commissionerGate();
     if (params.tab && params.tab !== ui.lastParam) { ui.tab = params.tab; ui.lastParam = params.tab; }
-    const body = { league: leagueTab, brands: brandsTab, rules: rulesTab, discord: discordTab, github: githubTab, backup: backupTab }[ui.tab] || leagueTab;
+    const body = { league: leagueTab, brands: brandsTab, rules: rulesTab, discord: discordTab, backup: backupTab }[ui.tab] || leagueTab;
     return `
       ${pageHead('Settings')}
-      <div class="tabs scroll" role="tablist">${TABS.map(([id, label]) => `<button class="tab${ui.tab === id ? ' active' : ''}" role="tab" data-act="set-tab" data-tab="${id}">${esc(label)}${id === 'github' && !githubReady() ? ' <span class="dot-warn"></span>' : ''}${id === 'discord' && !(state.admin.webhooks || []).length ? ' <span class="dot-warn"></span>' : ''}</button>`).join('')}</div>
+      <div class="tabs scroll" role="tablist">${TABS.map(([id, label]) => `<button class="tab${ui.tab === id ? ' active' : ''}" role="tab" data-act="set-tab" data-tab="${id}">${esc(label)}${id === 'discord' && !(state.admin.webhooks || []).length ? ' <span class="dot-warn"></span>' : ''}</button>`).join('')}</div>
       ${body()}`;
   },
   mount(root) {
@@ -232,14 +192,6 @@ export default {
         } else if (kind === 'discord') {
           saveAdmin({ botName: v.botName, pingMembers: !!v.pingMembers });
           toast('Saved');
-        } else if (kind === 'github') {
-          saveAdmin({ owner: v.owner, repo: v.repo, branch: v.branch || 'main', path: v.path || 'league.json', token: v.token, autoSave: !!v.autoSave });
-          if (!githubReady()) { toast('Fill in owner, repo and token', 'error'); return; }
-          try {
-            const name = await testGithub();
-            toast(`Connected to ${name} ✔${state.admin.autoSave !== false ? ' Changes now save automatically.' : ''}`);
-            if (state.dirty) scheduleAutoSave(500);
-          } catch (err) { toast(err.message, 'error', 8000); }
         }
       });
     });
@@ -253,9 +205,10 @@ export default {
         try {
           const data = JSON.parse(reader.result);
           if (!data || typeof data !== 'object' || !data.league) throw new Error('This file is not a league backup.');
-          if (!(await confirmDialog('Replace the whole league with this backup? (You can still discard before publishing.)', { okLabel: 'Restore', danger: true }))) return;
+          if (!(await confirmDialog('Replace the league on this device with this backup?', { okLabel: 'Restore', danger: true }))) return;
+          data.league.setupDone = true;
           replaceData(data);
-          toast('Backup restored — publish to make it live');
+          toast('Backup restored');
         } catch (e) { toast(e.message || 'Could not read that file', 'error'); }
       };
       reader.readAsText(file);
@@ -264,13 +217,6 @@ export default {
   },
   actions: {
     'set-tab': (el) => { ui.tab = el.dataset.tab; if (location.hash.includes('?')) location.hash = '#/settings'; else refresh(); },
-    'set-admin-on': () => {
-      const g = guessRepo();
-      saveAdmin({ on: true, ...(g && !state.admin.owner ? { owner: g.owner, repo: g.repo } : {}) });
-      toast('Commissioner mode is on for this device');
-      if (!state.data.superstars.length && !state.data.league.setupDone) location.hash = '#/setup';
-    },
-    'set-admin-off': () => { saveAdmin({ on: false }); location.hash = '#/'; },
     'brand-new': () => openBrandForm(null),
     'brand-edit': (el) => openBrandForm(el.dataset.id),
     'brand-move': (el) => {
@@ -313,23 +259,22 @@ export default {
         onSubmit(v) { setTimeout(() => post(customMessage(v)), 50); },
       });
     },
-    'gh-reload': async () => {
-      if (state.dirty && !(await confirmDialog('Reloading throws away your unpublished changes on this device.', { okLabel: 'Reload', danger: true }))) return;
-      try { await reloadFromGithub(); toast('Loaded the latest league from GitHub'); } catch (e) { toast(e.message, 'error', 6000); }
-    },
-    'gh-forget': () => { saveAdmin({ token: '' }); toast('Token removed from this device'); },
     'season-new': async () => {
       const next = Number(state.data.league.season) + 1;
-      if (!(await confirmDialog(`Start <strong>Season ${next}</strong>? New shows will count toward Season ${next} standings.`, { okLabel: `Start Season ${next}` }))) return;
-      commit((d) => { d.league.season = next; d.prHistory = null; });
-      toast(`Season ${next} has begun!`);
+      if (!(await confirmDialog(`End this season and start <strong>Season ${next}</strong>? The season's awards get locked in (see the Awards page), and standings reset.`, { okLabel: `Start Season ${next}` }))) return;
+      const { season, list } = endSeason();
+      toast(`Season ${next} has begun! Season ${season} awards are on the Awards page.`, 'ok', 5000);
+      setTimeout(() => post(awardsMessage(season, list, false)), 60);
     },
     'backup-export': () => {
       const name = (state.data.league.shortName || 'league').replace(/[^\w-]+/g, '-').toLowerCase();
       download(`${name}-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(state.data, null, 2));
+      markBackedUp();
+      refresh();
+      toast('Backup downloaded. Keep the file somewhere safe.');
     },
     'demo-load': async () => {
-      if (!(await confirmDialog('Replace the league on this device with the demo league? Nothing goes live unless you publish.', { okLabel: 'Load demo' }))) return;
+      if (!(await confirmDialog('Replace the league on this device with the demo league? Download a backup first if you want to keep yours.', { okLabel: 'Load demo', danger: true }))) return;
       try {
         const res = await fetch(`demo.json?t=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) throw new Error('demo.json was not found next to index.html');
@@ -339,11 +284,9 @@ export default {
       } catch (e) { toast(e.message, 'error'); }
     },
     'league-reset': async () => {
-      if (!(await confirmDialog('Start a blank league? This clears everything on this device (you can discard before publishing).', { okLabel: 'Start blank', danger: true }))) return;
-      const fresh = defaultLeague();
-      fresh.league = { ...fresh.league, name: state.data.league.name, logoUrl: state.data.league.logoUrl, discordInvite: state.data.league.discordInvite };
-      replaceData(clone(fresh));
-      toast('Blank league ready');
+      if (!(await confirmDialog('Delete this device\'s league and start a new one? This can\'t be undone unless you have a backup.', { okLabel: 'Start a new league', danger: true }))) return;
+      replaceData(clone(defaultLeague()));
+      location.hash = '#/setup';
     },
   },
 };

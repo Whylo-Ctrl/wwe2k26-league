@@ -24,7 +24,7 @@ export default {
     const prev = (d.prHistory && d.prHistory.ids) || [];
     const members = memberStandings(d, { season }).filter((r) => r.rec.matches);
     const lb = leaderboards(d, { season });
-    const actions = isAdmin() ? `<button class="btn btn-ghost" data-act="st-post-standings">Post standings</button><button class="btn btn-primary" data-act="st-post-pr">Post power rankings</button>` : '';
+    const actions = isAdmin() ? `<a class="btn btn-ghost" href="#/awards">🏆 Awards</a><button class="btn btn-ghost" data-act="st-post-standings">Post standings</button><button class="btn btn-primary" data-act="st-post-pr">Post power rankings</button>` : '';
 
     return `
       ${pageHead('Standings', `${season ? `Season ${esc(season)}` : 'All-time'} · ${esc(d.settings.points.win)} pts for a win, ${esc(d.settings.points.draw)} for a draw`, actions)}

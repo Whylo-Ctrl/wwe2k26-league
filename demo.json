@@ -641,7 +641,7 @@
       "notes": "Inaugural champion"
     },
     {
-      "id": "reign_m2aaqcwdgp",
+      "id": "reign_k91ka5043r",
       "titleId": "title_demo10",
       "holders": [
         "ss_demog"
@@ -656,7 +656,7 @@
       "notes": ""
     },
     {
-      "id": "reign_n98y3nwdgp",
+      "id": "reign_1e4znf043r",
       "titleId": "title_demo11",
       "holders": [
         "ss_democ",
@@ -672,7 +672,7 @@
       "notes": ""
     },
     {
-      "id": "reign_6jj2v1wdgp",
+      "id": "reign_5oo4s4043r",
       "titleId": "title_demow",
       "holders": [
         "ss_democ"
@@ -687,7 +687,7 @@
       "notes": ""
     },
     {
-      "id": "reign_w9ioy6wdgp",
+      "id": "reign_2e5h9f043s",
       "titleId": "title_demoy",
       "holders": [
         "ss_demol"
@@ -1018,7 +1018,7 @@
             "notes": ""
           },
           "gmFx": {
-            "createdStoryline": "story_ko9huewdgp"
+            "createdStoryline": "story_qg91k8043r"
           }
         },
         {
@@ -1557,5 +1557,9 @@
     }
   ],
   "drafts": [],
+  "briefcases": [],
+  "royalty": [],
+  "hallOfFame": [],
+  "awards": {},
   "prHistory": null
 }

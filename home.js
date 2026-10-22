@@ -3,34 +3,7 @@ import { currentReign, reignLength, powerRankings, pendingMatches, hasResult, ma
 import { esc, safeUrl, avatar, holderText, matchupText, fmtDate, options, emptyState, brandChip, stars } from './ui.js';
 import { remindersMessage, post } from './discord.js';
 import { eventStatus } from './shows.js';
-import { startSetup } from './setup.js';
 import { currentWeek, weekStatus, isPLEWeek, pleNameFor, gmSettings } from './gm.js';
-
-function myMatches() {
-  const me = getMember(state.me);
-  if (!me) return '<p class="muted">Pick your name to see the matches you need to play, who you\'re facing, and their gamertag.</p>';
-  const mine = new Set(state.data.superstars.filter((s) => s.memberId === me.id).map((s) => s.id));
-  const list = pendingMatches(state.data).filter(({ seg }) => participants(seg).some((id) => mine.has(id)));
-  if (!list.length) return '<p class="muted">No matches waiting on you right now. 🎉</p>';
-  return `<div class="list">${list.map(({ ev, seg }) => {
-    const opps = participants(seg).filter((id) => !mine.has(id)).map((id) => {
-      const s = getSuperstar(id);
-      const m = s && getMember(s.memberId);
-      return m ? `<li><strong>${esc(s.name)}</strong> — ${esc(m.name)}${m.gamertag ? ` · <span class="mono">${esc(m.gamertag)}</span>` : ''}${m.platform ? ` <span class="chip chip-muted">${esc(m.platform)}</span>` : ''}</li>` : '';
-    }).join('');
-    const dl = seg.deadline || ev.deadline;
-    const overdue = dl && dl < today();
-    return `<div class="list-item">
-      <div class="grow">
-        <div class="eyebrow">${esc(ev.name)} · ${esc(matchName(seg))}${seg.titleId ? ` · 🏆 ${esc(getTitle(seg.titleId)?.name || '')}` : ''}</div>
-        <div class="matchup">${matchupText(seg, { html: true })}</div>
-        ${opps ? `<ul class="opp-list">${opps}</ul>` : ''}
-        ${dl ? `<div class="${overdue ? 'text-bad' : 'muted'} small">⏰ ${overdue ? 'Overdue — was due' : 'Due'} ${esc(fmtDate(dl, { weekday: true }))}</div>` : ''}
-      </div>
-      <a class="btn btn-sm btn-primary" href="#/submit?match=${esc(seg.id)}">Submit result</a>
-    </div>`;
-  }).join('')}</div>`;
-}
 
 function gmCard() {
   const d = state.data;
@@ -51,25 +24,13 @@ function gmCard() {
 
 function setupChecklist() {
   const d = state.data;
-  const steps = [
-    { done: d.league.name !== 'My WWE 2K26 League', label: 'Name your league', href: '#/settings?tab=league' },
-    { done: d.members.length > 0, label: 'Add your Discord members', href: '#/roster?tab=members' },
-    { done: d.superstars.length > 0, label: 'Add superstars and assign them to members', href: '#/roster' },
-    { done: d.championships.length > 0, label: 'Add championships', href: '#/titles' },
-    { done: d.events.length > 0, label: 'Book your first show', href: '#/shows' },
-    { done: (state.admin.webhooks || []).length > 0, label: 'Connect Discord channels (webhooks)', href: '#/settings?tab=discord' },
-    { done: !!(state.admin.token && state.admin.repo), label: 'Turn on saving so everyone sees your league', href: '#/settings?tab=github' },
-  ];
-  if (steps.every((s) => s.done)) return '';
-  if (d.league.setupDone) {
-    const left = steps.filter((s) => !s.done);
-    return `<section class="card"><h2>Almost there</h2><ul class="checklist">${left.map((s) => `<li><a href="${s.href}">${esc(s.label)}</a></li>`).join('')}</ul></section>`;
-  }
-  return `<section class="card">
-    <h2>Get your league running</h2>
-    <ol class="checklist">${steps.map((s) => `<li class="${s.done ? 'done' : ''}"><a href="${s.href}">${esc(s.label)}</a></li>`).join('')}</ol>
-    <p class="muted small">Want to look around first? <a href="#/settings?tab=backup">Load the demo league</a> from Settings → Backup.</p>
-  </section>`;
+  const tips = [];
+  if (!(state.admin.webhooks || []).length) tips.push('<a href="#/settings?tab=discord">Connect a Discord channel</a> so match cards and results post there.');
+  const lastBackup = state.lastBackup ? new Date(state.lastBackup) : null;
+  const stale = !lastBackup || (Date.now() - lastBackup.getTime()) > 14 * 86400000;
+  if (d.events.length && stale) tips.push(`Your league is saved in this browser only. <a href="#/settings?tab=backup">Download a backup</a>${lastBackup ? '' : ' so you never lose it'}.`);
+  if (!tips.length) return '';
+  return `<section class="card tips">${tips.map((t) => `<p class="small">💡 ${t}</p>`).join('')}</section>`;
 }
 
 export default {
@@ -84,15 +45,6 @@ export default {
     const titles = d.championships.filter((t) => !t.retired);
     const stories = d.storylines.filter((s) => s.status !== 'concluded').slice(0, 3);
     const invite = safeUrl(L.discordInvite);
-    if (!isAdmin() && !d.superstars.length && !d.events.length) {
-      return `<section class="wiz-welcome">
-        <div class="wiz-trophy">🏆</div>
-        <h1>${esc(L.name)}</h1>
-        <p class="wiz-lead">This league hasn't been set up yet.</p>
-        <button class="btn btn-primary btn-lg" data-act="home-start-setup">I'm the commissioner: set it up</button>
-        <p class="muted small">It takes about 5 minutes: members, superstars, titles and your weekly shows.</p>
-      </section>`;
-    }
 
     return `
     <section class="hero">
@@ -102,13 +54,12 @@ export default {
         ${L.tagline ? `<p class="hero-sub">${esc(L.tagline)}</p>` : ''}
       </div>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="#/submit">Submit a result</a>
         ${invite ? `<a class="btn btn-discord" href="${esc(invite)}" target="_blank" rel="noopener">Join Discord</a>` : ''}
       </div>
     </section>
 
-    ${isAdmin() ? setupChecklist() : ''}
-    ${isAdmin() ? gmCard() : ''}
+    ${gmCard()}
+    ${setupChecklist()}
 
     ${titles.length ? `<section>
       <div class="section-head"><h2>Champions</h2><a href="#/titles">All titles →</a></div>
@@ -120,17 +71,14 @@ export default {
           <div class="champ-holder">${r ? `${avatar(s, 'sm')}<span>${holderText(r)}</span>` : '<span class="muted">Vacant</span>'}</div>
           ${r ? `<div class="muted small">${reignLength(r)} days</div>` : ''}
         </a>`;
-      }).join('')}</div>
+      }).join('')}${(d.briefcases || []).map((b) => `<a class="champ-card briefcase" href="#/titles">
+          <div class="champ-title">💼 Money in the Bank</div>
+          <div class="champ-holder">${avatar(getSuperstar(b.holder), 'sm')}<span>${esc(getSuperstar(b.holder)?.name || '?')}</span></div>
+          <div class="muted small">Can cash in any time</div>
+        </a>`).join('')}</div>
     </section>` : ''}
 
     <div class="grid-2">
-      <section class="card">
-        <div class="section-head"><h2>My matches</h2></div>
-        ${d.members.length ? `<label class="field inline-field"><span class="field-label">I am</span>
-          <select data-change="home-me">${options(d.members.map((m) => ({ value: m.id, label: m.name })), state.me, { empty: 'Pick your name…' })}</select></label>
-          ${myMatches()}` : '<p class="muted">Once members are added, pick your name here to see the matches you need to play.</p>'}
-      </section>
-
       <section class="card">
         <div class="section-head"><h2>Power rankings</h2><a href="#/standings">Standings →</a></div>
         ${pr.length ? `<ol class="rank-list">${pr.map((r, i) => `
@@ -138,9 +86,7 @@ export default {
           <span class="mono">${formatRecord(r.rec)}</span><span class="streak ${r.rec.streak > 0 ? 'up' : r.rec.streak < 0 ? 'down' : ''}">${formatStreak(r.rec.streak)}</span></li>`).join('')}</ol>`
           : '<p class="muted">Rankings appear after the first results come in.</p>'}
       </section>
-    </div>
 
-    <div class="grid-2">
       <section class="card">
         <div class="section-head"><h2>${next ? 'Next up' : 'Shows'}</h2><a href="#/shows">All shows →</a></div>
         ${next ? `<a class="event-link" href="#/show/${esc(next.id)}">
@@ -149,9 +95,11 @@ export default {
           </a>
           <ul class="card-list">${next.card.filter((s) => s.kind === 'match').map((seg) => `<li><span class="eyebrow">${esc(matchName(seg))}${seg.titleId ? ` · 🏆 ${esc(getTitle(seg.titleId)?.name || '')}` : ''}</span><div>${matchupText(seg, { html: true })} ${hasResult(seg) ? '<span class="chip chip-good">Done</span>' : ''}</div></li>`).join('') || '<li class="muted">Card to be announced</li>'}</ul>
           ${isAdmin() ? '<button class="btn btn-sm btn-ghost" data-act="home-reminders">Post deadline reminders</button>' : ''}`
-          : emptyState('No shows booked yet', isAdmin() ? 'Book a weekly show or a PLE to get things started.' : 'Check back soon.', isAdmin() ? '<a class="btn btn-primary" href="#/shows">Book a show</a>' : '')}
+          : emptyState('No shows booked yet', 'Let the GM book your first week.', '<a class="btn btn-primary" href="#/gm">Open the GM</a>')}
       </section>
+    </div>
 
+    <div class="grid-2">
       <section class="card">
         <div class="section-head"><h2>Latest results</h2>${lastDone ? `<a href="#/show/${esc(lastDone.id)}">${esc(lastDone.name)} →</a>` : ''}</div>
         ${lastDone ? `<ul class="card-list">${lastDone.card.filter((s) => s.kind === 'match' && hasResult(s)).map((seg) => {
@@ -181,11 +129,7 @@ export default {
     ${L.rules ? `<section class="card"><details><summary><h2 class="inline">League rules</h2></summary><div class="prose">${esc(L.rules).replace(/\n/g, '<br>')}</div></details></section>` : ''}
     `;
   },
-  onChange: {
-    'home-me': (el) => setMe(el.value),
-  },
   actions: {
     'home-reminders': () => post(remindersMessage()),
-    'home-start-setup': () => startSetup(),
   },
 };

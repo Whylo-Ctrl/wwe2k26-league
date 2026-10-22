@@ -290,6 +290,11 @@ export const profileView = {
           <div class="chips">${brandChip(s.brandId)}<span class="chip chip-muted">${s.gender === 'F' ? "Women's" : "Men's"} division</span>${s.alignment ? `<span class="chip ${s.alignment === 'Heel' ? 'chip-bad' : s.alignment === 'Face' ? 'chip-good' : 'chip-muted'}">${esc(s.alignment)}</span>` : ''}${s.status && s.status !== 'Active' ? `<span class="chip chip-warn">${esc(s.status)}</span>` : ''}</div>
           <h1>${esc(s.name)}</h1>
           ${belts.length ? `<div class="chips">${belts.map((t) => `<a class="chip chip-gold" href="#/title/${esc(t.id)}">🏆 ${esc(t.name)}</a>`).join('')}</div>` : ''}
+          ${(d.briefcases || []).some((b) => b.holder === s.id) || (d.royalty || []).some((r) => r.holder === s.id) || (d.hallOfFame || []).some((h) => h.superstarId === s.id) ? `<div class="chips">
+            ${(d.briefcases || []).some((b) => b.holder === s.id) ? '<span class="chip chip-good">💼 Mr. Money in the Bank</span>' : ''}
+            ${(d.royalty || []).filter((r) => r.holder === s.id).map((r) => `<span class="chip chip-gold">👑 ${esc(r.title)} (S${esc(r.season)})</span>`).join('')}
+            ${(d.hallOfFame || []).some((h) => h.superstarId === s.id) ? '<span class="chip chip-gold">🏛️ Hall of Famer</span>' : ''}
+          </div>` : ''}
           <dl class="facts">
             <div><dt>Played by</dt><dd>${m ? `${esc(m.name)}${m.gamertag ? ` · <span class="mono">${esc(m.gamertag)}</span>` : ''}${m.platform ? ` (${esc(m.platform)})` : ''}` : 'Unassigned'}</dd></div>
             ${s.overall ? `<div><dt>Overall</dt><dd>${esc(s.overall)}</dd></div>` : ''}
@@ -312,7 +317,7 @@ export const profileView = {
         <div class="stat"><span class="stat-val">${avg ? avg.toFixed(2) : '—'}</span><span class="stat-label">Avg rating</span></div>
       </div>
 
-      ${upcoming.length ? `<section class="card"><h2>Upcoming</h2><ul class="card-list">${upcoming.map(({ ev, seg }) => `<li><span class="eyebrow">${esc(ev.name)} · ${esc(matchName(seg))}</span><div>${seg.sides.map((sd) => esc(sideText(sd))).join(' <span class="vs">vs</span> ')}</div><a class="small" href="#/submit?match=${esc(seg.id)}">Submit result →</a></li>`).join('')}</ul></section>` : ''}
+      ${upcoming.length ? `<section class="card"><h2>Upcoming</h2><ul class="card-list">${upcoming.map(({ ev, seg }) => `<li><span class="eyebrow">${esc(ev.name)} · ${esc(matchName(seg))}</span><div>${seg.sides.map((sd) => esc(sideText(sd))).join(' <span class="vs">vs</span> ')}</div><a class="small" href="#/show/${esc(ev.id)}">Go to show →</a></li>`).join('')}</ul></section>` : ''}
 
       <section class="card">
         <h2>Match history</h2>

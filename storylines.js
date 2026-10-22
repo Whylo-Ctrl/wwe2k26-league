@@ -98,7 +98,7 @@ export default {
     const done = d.storylines.filter((s) => s.status === 'concluded');
     const promos = d.promos.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     return `
-      ${pageHead('Storylines', 'Rivalries, feuds and the promos that fuel them', admin ? '<button class="btn btn-ghost" data-act="promo-new">+ Promo</button><button class="btn btn-primary" data-act="story-new">+ Storyline</button>' : '<a class="btn btn-ghost" href="#/submit?tab=promo">Submit a promo</a>')}
+      ${pageHead('Storylines', 'Rivalries, feuds and the promos that fuel them', admin ? '<button class="btn btn-ghost" data-act="promo-new">+ Promo</button><button class="btn btn-primary" data-act="story-new">+ Storyline</button>' : '')}
       ${active.length ? `<div class="grid-2 align-start">${active.map(storyCard).join('')}</div>` : emptyState('No active storylines', admin ? 'Start a rivalry between superstars and log updates week by week.' : '')}
       ${done.length ? `<button class="btn btn-ghost btn-sm" data-act="story-toggle-done">${ui.showConcluded ? 'Hide' : 'Show'} concluded (${done.length})</button>${ui.showConcluded ? `<div class="grid-2 align-start">${done.map(storyCard).join('')}</div>` : ''}` : ''}
 
@@ -117,7 +117,7 @@ export default {
             ${admin ? `<button class="btn btn-sm btn-ghost" data-act="promo-edit" data-id="${esc(p.id)}">Edit</button>` : ''}
           </div>
         </article>`;
-      }).join('')}</div>` : '<p class="muted">No promos yet. Members can submit promos from the Submit page.</p>'}`;
+      }).join('')}</div>` : '<p class="muted">No promos yet. Add one with <strong>+ Promo</strong>.</p>'}`;
   },
   actions: {
     'story-new': () => openStoryForm(null),

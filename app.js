@@ -1,7 +1,7 @@
-// App shell: routing, layout, the publish banner, and click/change delegation.
+// App shell: routing, layout, and click/change delegation.
 
-import { state, init, subscribe, isAdmin, githubReady, publish, discardDraft, keepDraftOverPublished, reloadFromGithub, autoSaveOn, saveState, onSaveChange, runAutoSave } from './store.js';
-import { esc, safeUrl, initials, formModal, field, input, toast, confirmDialog } from './ui.js';
+import { state, init, subscribe, isAdmin, runHooks } from './store.js';
+import { esc, safeUrl, initials, toast } from './ui.js';
 
 import home from './home.js';
 import { rosterView, profileView } from './roster.js';
@@ -10,10 +10,11 @@ import { showsView, showView } from './shows.js';
 import standings from './standings.js';
 import storylines from './storylines.js';
 import draft from './draft.js';
-import { submitView, inboxView } from './submit.js';
 import settings from './settings.js';
 import gmPage from './gm-page.js';
 import setup, { needsSetup } from './setup.js';
+import awards from './awards.js';
+import help from './help.js';
 
 const ROUTES = [
   { path: '', view: home, nav: 'home' },
@@ -26,25 +27,25 @@ const ROUTES = [
   { path: 'standings', view: standings, nav: 'standings' },
   { path: 'storylines', view: storylines, nav: 'storylines' },
   { path: 'draft', view: draft, nav: 'draft' },
-  { path: 'submit', view: submitView, nav: 'submit' },
-  { path: 'inbox', view: inboxView, nav: 'inbox' },
   { path: 'settings', view: settings, nav: 'settings' },
   { path: 'gm', view: gmPage, nav: 'gm' },
   { path: 'setup', view: setup, nav: 'setup' },
+  { path: 'awards', view: awards, nav: 'awards' },
+  { path: 'help', view: help, nav: 'help' },
 ];
 
 const NAV = [
   { id: 'home', href: '#/', label: 'Home' },
-  { id: 'gm', href: '#/gm', label: 'GM', show: () => isAdmin() },
+  { id: 'gm', href: '#/gm', label: 'GM' },
   { id: 'shows', href: '#/shows', label: 'Shows' },
   { id: 'standings', href: '#/standings', label: 'Standings' },
   { id: 'titles', href: '#/titles', label: 'Titles' },
   { id: 'roster', href: '#/roster', label: 'Roster' },
   { id: 'storylines', href: '#/storylines', label: 'Storylines' },
+  { id: 'awards', href: '#/awards', label: 'Awards' },
   { id: 'draft', href: '#/draft', label: 'Draft', show: () => state.data.drafts.length > 0 },
-  { id: 'submit', href: '#/submit', label: 'Submit' },
-  { id: 'inbox', href: '#/inbox', label: 'Inbox', show: () => isAdmin() },
-  { id: 'settings', href: '#/settings', label: 'Settings', show: () => isAdmin() },
+  { id: 'settings', href: '#/settings', label: 'Settings' },
+  { id: 'help', href: '#/help', label: 'Help' },
 ];
 
 // Collect every view's action handlers into one registry.
@@ -57,22 +58,7 @@ for (const r of ROUTES) {
   Object.assign(inputHandlers, r.view.onInput || {});
 }
 
-Object.assign(actions, {
-  'app-publish': () => openPublish(),
-  'app-discard': async () => {
-    if (await confirmDialog('Throw away all unpublished changes on this device?', { okLabel: 'Discard changes', danger: true })) {
-      discardDraft();
-      toast('Changes discarded');
-    }
-  },
-  'app-keep-mine': () => keepDraftOverPublished(),
-  'app-retry-save': () => runAutoSave(),
-  'app-load-published': async () => {
-    if (!(await confirmDialog('Load the published league and throw away your local changes?', { okLabel: 'Load published', danger: true }))) return;
-    try { if (githubReady()) await reloadFromGithub(); else discardDraft(); toast('Loaded the published league'); }
-    catch (e) { toast(e.message, 'error', 6000); }
-  },
-});
+Object.assign(actions, {});
 
 export function parseHash() {
   const raw = location.hash.replace(/^#\/?/, '');
@@ -102,7 +88,7 @@ function header(simple = false) {
     <div class="header-inner">
       <a class="brand" href="#/">
         ${logo ? `<img class="brand-logo" src="${esc(logo)}" alt="">` : `<span class="brand-logo brand-initials">${esc(initials(L.shortName || L.name))}</span>`}
-        <span class="brand-text"><span class="brand-name">${esc(L.name)}</span><span class="brand-sub">Season ${esc(L.season)}${isAdmin() ? ' · <span class="admin-pill">Commissioner</span>' : ''}${isAdmin() ? ` <span id="save-pill">${savePill()}</span>` : ''}</span></span>
+        <span class="brand-text"><span class="brand-name">${esc(L.name)}</span><span class="brand-sub">Season ${esc(L.season)}${state.storageOk ? ' · <span class="save-pill ok">Saved on this device</span>' : ' · <span class="save-pill warn">⚠ Not saving</span>'}</span></span>
       </a>
     </div>
     ${simple ? '' : `<nav class="site-nav" aria-label="Main">
@@ -111,40 +97,17 @@ function header(simple = false) {
   </header>`;
 }
 
-function savePill() {
-  if (!autoSaveOn()) return state.dirty ? '· <span class="save-pill warn">Only on this device</span>' : '';
-  const st = saveState.status;
-  if (st === 'pending' || st === 'saving') return '· <span class="save-pill">Saving…</span>';
-  if (st === 'error') return '· <span class="save-pill warn">⚠ Not saved</span>';
-  return state.dirty ? '· <span class="save-pill">Saving…</span>' : '· <span class="save-pill ok">✓ Saved for everyone</span>';
-}
-
 function banner() {
-  if (!isAdmin()) return '';
-  if (autoSaveOn() && !state.conflict) {
-    if (saveState.status === 'error') {
-      return `<div class="banner banner-warn"><span>⚠️ Your last change wasn't saved: ${esc(saveState.error)}</span><span class="banner-actions"><button class="btn btn-sm btn-primary" data-act="app-retry-save">Try again</button></span></div>`;
-    }
-    return '';
-  }
-  if (state.conflict) {
-    return `<div class="banner banner-warn"><span>⚠️ The published league changed since you started editing on this device.</span>
-      <span class="banner-actions"><button class="btn btn-sm" data-act="app-load-published">Load published</button><button class="btn btn-sm btn-ghost" data-act="app-keep-mine">Keep my version</button></span></div>`;
-  }
-  if (state.dirty) {
-    return `<div class="banner"><span><strong>Not saved for everyone yet.</strong> These changes are only on this device, so your league can't see them.</span>
-      <span class="banner-actions">${githubReady() ? '<button class="btn btn-sm btn-primary" data-act="app-publish">Save for everyone</button>' : '<a class="btn btn-sm btn-primary" href="#/settings?tab=github">Turn on saving</a>'}<button class="btn btn-sm btn-ghost" data-act="app-discard">Undo changes</button></span></div>`;
-  }
-  return '';
+  if (state.storageOk) return '';
+  return `<div class="banner banner-warn"><span>⚠️ This browser isn't letting the site save (private browsing or storage turned off). Your league will be lost when you close it. <a href="#/settings?tab=backup">Download a backup</a>.</span></div>`;
 }
 
 function footer() {
   const L = state.data.league;
   const invite = safeUrl(L.discordInvite);
   return `<footer class="site-footer">
-    <span>${esc(L.name)} · WWE 2K26 league</span>
+    <span>${esc(L.name)} · WWE 2K26 league · saved on this device</span>
     ${invite ? `<a href="${esc(invite)}" target="_blank" rel="noopener">Join the Discord</a>` : ''}
-    ${isAdmin() ? '' : '<a href="#/settings">Commissioner login</a>'}
   </footer>`;
 }
 
@@ -153,7 +116,7 @@ function render() {
   const app = document.getElementById('app');
   const { route, params } = parseHash();
   // brand-new league: walk the commissioner through setup first
-  if (isAdmin() && needsSetup() && (!route || !['setup', 'settings'].includes(route.path))) { location.hash = '#/setup'; return; }
+  if (needsSetup() && (!route || !['setup', 'settings'].includes(route.path))) { location.hash = '#/setup'; return; }
   const inSetup = !!(route && route.path === 'setup');
   const sameRoute = lastHash === location.hash;
   const scroll = window.scrollY;
@@ -164,32 +127,13 @@ function render() {
     console.error(e);
     html = `<div class="page"><h1>Something went wrong</h1><pre class="error">${esc(e.stack || e.message)}</pre></div>`;
   }
-  app.innerHTML = `${header(inSetup)}<div id="save-banner">${inSetup ? '' : banner()}</div><main id="main" class="container">${html}</main>${inSetup ? '' : footer()}`;
+  app.innerHTML = `${header(inSetup)}${banner()}<main id="main" class="container">${html}</main>${inSetup ? '' : footer()}`;
   const active = route ? route.nav : '';
   app.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('active', a.dataset.nav === active));
   if (route && route.view.mount) route.view.mount(document.getElementById('main'), params);
   document.title = `${state.data.league.name}`;
   if (sameRoute) window.scrollTo(0, scroll); else window.scrollTo(0, 0);
   lastHash = location.hash;
-}
-
-function openPublish() {
-  formModal({
-    title: 'Save for everyone',
-    submitLabel: 'Save',
-    html: `<p class="muted">This saves the league to GitHub so everyone sees the update. The site refreshes for visitors within about a minute.</p>
-      ${field('What changed? (optional)', input('message', '', 'placeholder="e.g. Raw Week 4 results"'))}`,
-    async onSubmit(v) {
-      let res = await publish({ message: v.message || undefined });
-      if (res.conflict) {
-        const ok = await confirmDialog('Someone else published a newer version since you loaded the league. Publishing now will overwrite their changes.', { okLabel: 'Overwrite and publish', danger: true, title: 'Newer version on GitHub' });
-        if (!ok) return false;
-        res = await publish({ message: v.message || undefined, force: true });
-      }
-      toast('Saved! Everyone will see it within a minute.');
-      return true;
-    },
-  });
 }
 
 document.addEventListener('click', (e) => {
@@ -210,15 +154,8 @@ document.addEventListener('input', (e) => {
 });
 
 window.addEventListener('hashchange', render);
-// update just the save indicator (a full re-render would wipe anything being typed)
-onSaveChange(() => {
-  const pill = document.getElementById('save-pill');
-  if (pill) pill.innerHTML = savePill();
-  const b = document.getElementById('save-banner');
-  const { route } = parseHash();
-  if (b && !(route && route.path === 'setup')) b.innerHTML = banner();
-});
+
 subscribe(render);
 
 document.getElementById('app').innerHTML = '<div class="loading">Loading league…</div>';
-init().catch((e) => { console.error(e); toast('Could not load the league data', 'error'); render(); });
+init().then(() => runHooks('afterLoad')).catch((e) => { console.error(e); toast('Could not load the league data', 'error'); render(); });

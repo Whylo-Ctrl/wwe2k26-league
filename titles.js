@@ -109,6 +109,16 @@ function openReignForm(reignId) {
   });
 }
 
+function specialsSection(d) {
+  const cases = d.briefcases || [];
+  const crowns = (d.royalty || []).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  if (!cases.length && !crowns.length) return '';
+  return `<div class="grid-2 align-start" style="margin-top:16px">
+    ${cases.length ? `<section class="card"><h2>💼 Money in the Bank</h2><ul class="card-list">${cases.map((b) => `<li class="row gap">${avatar(getSuperstar(b.holder), 'sm')}<div class="grow"><a href="#/superstar/${esc(b.holder)}"><strong>${esc(getSuperstar(b.holder)?.name || '?')}</strong></a><div class="muted small">${b.division === 'F' ? "Women's" : "Men's"} briefcase · won ${esc(fmtDate(b.since))}. Can cash in on a world champion at any moment, and must within 12 weeks.</div></div></li>`).join('')}</ul></section>` : ''}
+    ${crowns.length ? `<section class="card"><h2>👑 King & Queen of the Ring</h2><ul class="card-list">${crowns.map((c) => `<li class="row gap">${avatar(getSuperstar(c.holder), 'sm')}<div class="grow"><strong>${esc(getSuperstar(c.holder)?.name || '?')}</strong><div class="muted small">${esc(c.title)} · Season ${esc(c.season)}</div></div></li>`).join('')}</ul></section>` : ''}
+  </div>`;
+}
+
 export const titlesView = {
   render() {
     const d = state.data;
@@ -138,7 +148,8 @@ export const titlesView = {
             ${isAdmin() ? `<button class="btn btn-sm btn-ghost" data-act="title-edit" data-id="${esc(t.id)}">Edit</button>` : ''}
           </div>
         </article>`;
-      }).join('')}</div>`;
+      }).join('')}</div>
+      ${specialsSection(d)}`;
   },
   actions: {
     'titles-post': () => post(championsMessage()),

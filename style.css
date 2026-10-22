@@ -519,3 +519,28 @@ blockquote { margin: 10px 0; padding: 8px 12px; border-left: 3px solid var(--acc
 @media (max-width: 640px) {
   .wiz-title .wiz-champ { flex: 1 1 100%; max-width: none; }
 }
+
+.champ-card.briefcase { border-top-color: var(--good); background: linear-gradient(160deg, rgba(34, 197, 94, .14), var(--panel) 60%); }
+.champ-card.briefcase .champ-title { color: #6ee7a0; }
+
+/* ---------- awards ---------- */
+.award-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.award { position: relative; padding: 16px; border-radius: var(--radius); background: linear-gradient(160deg, rgba(245, 197, 66, .12), var(--panel) 60%); border: 1px solid rgba(245, 197, 66, .35); display: flex; flex-direction: column; gap: 6px; }
+.award-icon { font-size: 1.8rem; }
+.award-winner { font-family: var(--head); text-transform: uppercase; font-size: 1.2rem; line-height: 1.2; }
+.hof-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.hof-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border-radius: var(--radius-sm); background: var(--panel-2); border: 1px solid var(--line); }
+.hof-name { font-family: var(--head); text-transform: uppercase; font-size: 1.1rem; }
+
+/* ---------- help ---------- */
+.help-toc { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.help-toc a { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--panel); text-decoration: none; font-size: .85rem; font-weight: 600; }
+.help-toc a:hover { border-color: var(--accent); }
+.help-section { margin-bottom: 10px; }
+.help-section summary { list-style: none; display: flex; align-items: center; justify-content: space-between; }
+.help-section summary::after { content: '+'; font-size: 1.4rem; color: var(--muted); }
+.help-section[open] summary::after { content: '–'; }
+.help-section summary::-webkit-details-marker { display: none; }
+.help-body { margin-top: 10px; line-height: 1.6; }
+.help-body ul, .help-body ol { padding-left: 1.2rem; margin: 0 0 10px; }
+.help-body li { margin-bottom: 6px; }
