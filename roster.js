@@ -198,7 +198,7 @@ export const rosterView = {
     const tabs = [['superstars', `Superstars (${d.superstars.length})`], ['teams', `Tag teams & factions (${d.teams.length})`], ['members', `Members (${d.members.length})`]];
     let actions = '';
     if (isAdmin()) {
-      if (ui.tab === 'superstars') actions = '<button class="btn btn-ghost" data-act="ss-bulk">Add many</button><button class="btn btn-primary" data-act="ss-new">+ Superstar</button>';
+      if (ui.tab === 'superstars') actions = '<a class="btn btn-ghost" href="#/draft">Run a draft</a><button class="btn btn-ghost" data-act="ss-bulk">Add many</button><button class="btn btn-primary" data-act="ss-new">+ Superstar</button>';
       if (ui.tab === 'teams') actions = '<button class="btn btn-primary" data-act="team-new">+ Team</button>';
       if (ui.tab === 'members') actions = '<button class="btn btn-primary" data-act="member-new">+ Member</button>';
     }

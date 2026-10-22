@@ -3,6 +3,7 @@ import { currentReign, reignLength, powerRankings, pendingMatches, hasResult, ma
 import { esc, safeUrl, avatar, holderText, matchupText, fmtDate, options, emptyState, brandChip, stars } from './ui.js';
 import { remindersMessage, post } from './discord.js';
 import { eventStatus } from './shows.js';
+import { startSetup } from './setup.js';
 import { currentWeek, weekStatus, isPLEWeek, pleNameFor, gmSettings } from './gm.js';
 
 function myMatches() {
@@ -57,9 +58,13 @@ function setupChecklist() {
     { done: d.championships.length > 0, label: 'Add championships', href: '#/titles' },
     { done: d.events.length > 0, label: 'Book your first show', href: '#/shows' },
     { done: (state.admin.webhooks || []).length > 0, label: 'Connect Discord channels (webhooks)', href: '#/settings?tab=discord' },
-    { done: !!(state.admin.token && state.admin.repo), label: 'Set up publishing to GitHub', href: '#/settings?tab=github' },
+    { done: !!(state.admin.token && state.admin.repo), label: 'Turn on saving so everyone sees your league', href: '#/settings?tab=github' },
   ];
   if (steps.every((s) => s.done)) return '';
+  if (d.league.setupDone) {
+    const left = steps.filter((s) => !s.done);
+    return `<section class="card"><h2>Almost there</h2><ul class="checklist">${left.map((s) => `<li><a href="${s.href}">${esc(s.label)}</a></li>`).join('')}</ul></section>`;
+  }
   return `<section class="card">
     <h2>Get your league running</h2>
     <ol class="checklist">${steps.map((s) => `<li class="${s.done ? 'done' : ''}"><a href="${s.href}">${esc(s.label)}</a></li>`).join('')}</ol>
@@ -79,6 +84,15 @@ export default {
     const titles = d.championships.filter((t) => !t.retired);
     const stories = d.storylines.filter((s) => s.status !== 'concluded').slice(0, 3);
     const invite = safeUrl(L.discordInvite);
+    if (!isAdmin() && !d.superstars.length && !d.events.length) {
+      return `<section class="wiz-welcome">
+        <div class="wiz-trophy">🏆</div>
+        <h1>${esc(L.name)}</h1>
+        <p class="wiz-lead">This league hasn't been set up yet.</p>
+        <button class="btn btn-primary btn-lg" data-act="home-start-setup">I'm the commissioner: set it up</button>
+        <p class="muted small">It takes about 5 minutes: members, superstars, titles and your weekly shows.</p>
+      </section>`;
+    }
 
     return `
     <section class="hero">
@@ -172,5 +186,6 @@ export default {
   },
   actions: {
     'home-reminders': () => post(remindersMessage()),
+    'home-start-setup': () => startSetup(),
   },
 };

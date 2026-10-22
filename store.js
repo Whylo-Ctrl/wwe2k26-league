@@ -130,7 +130,7 @@ function lsSet(key, val) {
 }
 
 function defaultAdmin() {
-  return { on: false, token: '', owner: '', repo: '', branch: 'main', path: 'league.json', webhooks: [], botName: '', pingMembers: true };
+  return { on: false, token: '', owner: '', repo: '', branch: 'main', path: 'league.json', webhooks: [], botName: '', pingMembers: true, autoSave: true };
 }
 
 // ---------- state ----------
@@ -150,6 +150,9 @@ export const hooks = { afterResults: new Set() };
 export function runHooks(name) { for (const fn of hooks[name] || []) { try { fn(); } catch (e) { console.error(e); } } }
 
 const listeners = new Set();
+const saveListeners = new Set();
+export function onSaveChange(fn) { saveListeners.add(fn); }
+function emitSave() { for (const fn of saveListeners) fn(); }
 export function subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 function emit() { for (const fn of listeners) fn(); }
 // Re-draw the page without changing data (e.g. after a filter changes).
@@ -176,6 +179,12 @@ export function guessRepo() {
   if (!m) return null;
   const seg = location.pathname.split('/').filter(Boolean)[0];
   return { owner: m[1], repo: seg || `${m[1]}.github.io` };
+}
+
+export function tokenUrl(owner) {
+  const q = new URLSearchParams({ name: 'WWE League site', description: 'Lets the league website save league.json', expires_in: '366', contents: 'write' });
+  if (owner) q.set('target_name', owner);
+  return `https://github.com/settings/personal-access-tokens/new?${q}`;
 }
 
 export function githubReady() {
@@ -207,6 +216,7 @@ export async function init() {
     state.data = clone(state.published);
   }
   emit();
+  if (state.dirty && !state.conflict) scheduleAutoSave(1500);
 }
 
 function saveDraft() {
@@ -219,6 +229,7 @@ export function commit(mutator) {
   state.data.updatedAt = new Date().toISOString();
   state.dirty = true;
   saveDraft();
+  scheduleAutoSave();
   emit();
   return result;
 }
@@ -228,7 +239,53 @@ export function replaceData(newData) {
   state.data.updatedAt = new Date().toISOString();
   state.dirty = true;
   saveDraft();
+  scheduleAutoSave();
   emit();
+}
+
+// ---------- auto-save ----------
+// Once GitHub is connected, every change saves itself a few seconds later,
+// so everyone who opens the site sees the latest league.
+export const saveState = { status: 'idle', error: '' }; // idle | pending | saving | saved | error
+let saveTimer = null;
+let saving = false;
+
+export function autoSaveOn() {
+  return !!(state.admin.on && githubReady() && state.admin.autoSave !== false);
+}
+
+export function scheduleAutoSave(delay = 2500) {
+  if (!autoSaveOn() || state.conflict) return;
+  saveState.status = 'pending';
+  emitSave();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(runAutoSave, delay);
+}
+
+export async function runAutoSave() {
+  if (!autoSaveOn() || !state.dirty) return;
+  if (saving) { scheduleAutoSave(1500); return; }
+  saving = true;
+  saveState.status = 'saving';
+  emitSave();
+  try {
+    const r = await publish({ message: 'League update', quiet: true });
+    if (r && r.conflict) {
+      state.conflict = true;
+      saveState.status = 'error';
+      saveState.error = 'Someone else saved a newer version of the league.';
+      emit();
+    } else {
+      saveState.status = state.dirty ? 'pending' : 'saved';
+      saveState.error = '';
+    }
+  } catch (e) {
+    saveState.status = 'error';
+    saveState.error = e.message === 'Failed to fetch' ? 'Could not reach GitHub. Check your connection.' : e.message;
+  }
+  saving = false;
+  emitSave();
+  if (saveState.status === 'pending') scheduleAutoSave(1000);
 }
 
 export function discardDraft() {
@@ -300,7 +357,7 @@ export async function testGithub() {
 
 // Publish the current league data to GitHub. Returns {conflict:true} if the
 // file changed on GitHub since you started editing (unless force=true).
-export async function publish({ message, force = false } = {}) {
+export async function publish({ message, force = false, quiet = false } = {}) {
   if (!githubReady()) throw new Error('Set up GitHub publishing in Settings first (owner, repo and token).');
   const remote = await ghGet();
   if (remote && !force) {
@@ -311,6 +368,7 @@ export async function publish({ message, force = false } = {}) {
     }
   }
   if (!state.data.updatedAt) state.data.updatedAt = new Date().toISOString();
+  const snapshot = JSON.stringify(state.data);
   const body = {
     message: message || `League update — ${new Date().toLocaleString()}`,
     content: b64encode(JSON.stringify(state.data, null, 2) + '\n'),
@@ -321,12 +379,13 @@ export async function publish({ message, force = false } = {}) {
   if (!res.ok) throw await ghError(res);
   const j = await res.json();
   state.publishedSha = j.content && j.content.sha;
-  state.published = clone(state.data);
-  state.dirty = false;
+  // only what was sent counts as saved; edits made while saving stay pending
+  state.published = normalize(JSON.parse(snapshot));
+  state.dirty = JSON.stringify(state.data) !== snapshot;
   state.conflict = false;
   state.source = 'github';
-  lsSet(LS_DRAFT, null);
-  emit();
+  if (state.dirty) saveDraft(); else lsSet(LS_DRAFT, null);
+  if (quiet) emitSave(); else emit();
   return { ok: true, commitUrl: j.commit && j.commit.html_url };
 }
 

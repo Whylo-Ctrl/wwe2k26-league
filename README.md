@@ -38,24 +38,24 @@ You can always shuffle the card, remove or add matches, or edit anything before 
 In this repo: **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `main` / `(root)` → Save**.
 After a minute your site is live at `https://<your-username>.github.io/<repo-name>/`.
 
-### 2. Become commissioner on your device
-Open the site, scroll to the bottom and tap **Commissioner login**, then **Turn on commissioner mode**.
-Want to look around first? Go to **Settings → Backup & seasons → Load demo league** (nothing goes live until you publish).
+### 2. Open the site and follow the setup
+On a brand-new league the site shows **"I'm the commissioner: set it up"**. Tap it, and it walks you through:
 
-### 3. Let the site save to GitHub (publishing)
-Create a **fine-grained personal access token**:
-1. GitHub → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**
-2. **Repository access:** *Only select repositories* → this repo
-3. **Permissions → Repository permissions → Contents: Read and write**
-4. Generate it, copy it, and paste it in the site under **Settings → Publishing**. Then tap **Save & test**.
+1. League name
+2. Brands (Raw, SmackDown, NXT or your own)
+3. Members (the people in your Discord who play)
+4. Superstars (who each member plays as, plus CPU superstars)
+5. Championships and current champions
+6. Weekly shows (what day each brand airs, matches per show, how often PLEs happen)
+7. **Save it for everyone.** The site opens GitHub with a "save key" (token) already filled in. You choose this repo, generate the key and paste it back. From then on **every change saves by itself**, and everyone who opens the site sees the latest league within about a minute.
 
-Now when you edit, a yellow bar says *Unpublished changes*. Tap **Publish** and everyone sees the update within about a minute.
+After that the full app unlocks: the GM, shows, standings, titles, roster, storylines and settings.
 
-> The token is stored only in your browser. Never paste it in Discord or commit it to the repo.
+> The save key is stored only in your browser. Never paste it in Discord or commit it to the repo. If you run the league from two devices, connect saving on each one (**Settings → Saving**).
 
-### 4. Connect your Discord channels
+### 3. Connect your Discord channels
 For each channel you want the site to post in: **Edit Channel → Integrations → Webhooks → New Webhook → Copy Webhook URL**.
-In the site go to **Settings → Discord → + Add channel**, paste the URL, and pick what that channel is for (cards, results, titles, rankings, news). Tap **Test**.
+In the site, go to **Settings → Discord → + Add channel**, paste the URL, and pick what that channel is for (cards, results, titles, rankings, news). Tap **Test**.
 
 > Webhook URLs are also stored only in your browser. They are never written to `league.json`, because anyone with the link could post in your channel.
 
@@ -67,14 +67,14 @@ To let posts **@mention** members, add each member's Discord user ID on the Rost
 2. Members play online, then use **Submit** on the site and paste the message it gives them into your submissions channel.
 3. Copy those messages into **Inbox** and approve them. Or tap the winners yourself on the **GM** page.
 4. When every result is in, the GM books the next week. With autopilot on, it does this by itself.
-5. Post results and power rankings from **Standings**, then **Publish** (autopilot publishes for you).
+5. Post results and power rankings from **Standings**. Everything saves for everyone automatically.
 
 Want to book a show by hand instead? **Shows → + Book show** still works any time.
 
 New season? **Settings → Backup & seasons → Start Season 2**. Standings reset, while champions and all-time stats carry over.
 
 ## Co-commissioners
-Add them as collaborators on the repo. Each one turns on commissioner mode on their own device and makes their own token. If two people edit at once, the site warns before overwriting.
+Add them as collaborators on the repo. Each one turns on commissioner mode on their own device and makes their own save key (**Settings → Saving**). If two people edit at once, the site warns instead of overwriting.
 
 ## Files
 
@@ -82,11 +82,12 @@ Add them as collaborators on the repo. Each one turns on commissioner mode on th
 |---|---|
 | `index.html`, `style.css` | The page and its look |
 | `app.js` | Navigation, the publish bar |
-| `store.js` | League data, saving drafts, publishing to GitHub |
+| `store.js` | League data and saving to GitHub (auto-save) |
 | `stats.js` | Records, standings, power rankings, title logic |
 | `discord.js` | Discord messages + webhooks |
 | `gm.js` | The GM: weekly booking, contenders, rivalries |
 | `ui.js` | Shared helpers (popups, forms) |
+| `setup.js` | The first-run setup steps |
 | `home.js`, `gm-page.js`, `shows.js`, `roster.js`, `titles.js`, `standings.js`, `storylines.js`, `draft.js`, `submit.js`, `settings.js` | One file per page |
 | `league.json` | **Your league data** (the site edits this for you) |
 | `demo.json` | Sample league for trying things out |

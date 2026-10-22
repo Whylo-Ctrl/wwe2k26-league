@@ -3,7 +3,7 @@ import { currentReign, reignsFor, reignLength, defenses, today, matchName, plura
 import { esc, safeUrl, avatar, brandChip, fmtDate, options, field, input, textarea, formModal, confirmDialog, toast, emptyState, pageHead, holderText, superstarOptions } from './ui.js';
 import { post, championsMessage, titleChangeMessage } from './discord.js';
 
-const PRESETS = [
+export const PRESETS = [
   { name: 'Undisputed WWE Championship', brand: 'smackdown', kind: 'singles', division: 'men' },
   { name: 'World Heavyweight Championship', brand: 'raw', kind: 'singles', division: 'men' },
   { name: "WWE Women's Championship", brand: 'smackdown', kind: 'singles', division: 'women' },

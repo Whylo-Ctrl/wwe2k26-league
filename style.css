@@ -462,3 +462,60 @@ blockquote { margin: 10px 0; padding: 8px 12px; border-left: 3px solid var(--acc
 .gm-home-msg { font-weight: 600; margin-top: 2px; }
 .dc-quote { display: block; border-left: 3px solid #4e5058; padding-left: 8px; color: #b5bac1; font-style: italic; }
 .grid-2 > *, .grid-3 > * { min-width: 0; }
+
+/* ---------- setup wizard ---------- */
+.wizard { max-width: 760px; margin: 0 auto; }
+.wizard h1 { margin: 18px 0 6px; }
+.wiz-lead { color: var(--muted); font-size: 1.02rem; margin-bottom: 18px; }
+.center { text-align: center; }
+.wiz-progress { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin: 4px 0 8px; }
+.wiz-dot { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--muted); font-size: .7rem; text-align: center; position: relative; }
+.wiz-dot span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line-2); background: var(--panel); font-weight: 700; font-size: .8rem; position: relative; z-index: 1; }
+.wiz-dot::before { content: ''; position: absolute; top: 15px; left: -50%; width: 100%; height: 2px; background: var(--line-2); }
+.wiz-dot:first-child::before { display: none; }
+.wiz-dot.done span { background: var(--good); border-color: var(--good); color: #04130a; }
+.wiz-dot.done::before, .wiz-dot.current::before { background: var(--good); }
+.wiz-dot.current span { border-color: var(--accent); color: #fff; box-shadow: 0 0 0 4px rgba(227, 36, 43, .2); }
+.wiz-dot.current { color: #fff; }
+.wiz-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+.wiz-nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 8px 0 18px; }
+.wiz-brands { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.wiz-brand { --c: #6b7280; display: flex; align-items: center; gap: 10px; padding: 16px; border-radius: var(--radius-sm); border: 2px solid var(--line-2); background: var(--bg-2); cursor: pointer; font-family: var(--head); text-transform: uppercase; font-size: 1.1rem; letter-spacing: .03em; }
+.wiz-brand:has(input:checked) { border-color: var(--c); background: color-mix(in srgb, var(--c) 18%, var(--bg-2)); }
+.wiz-add-row { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 14px; }
+.wiz-list { list-style: none; margin: 8px 0; padding: 0; }
+.wiz-list li { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--line); }
+.wiz-list li .muted { flex: 1; }
+.wiz-brand-group { margin-top: 12px; }
+.wiz-bulk { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
+.wiz-bulk summary { color: var(--muted); font-size: .9rem; }
+.wiz-bulk .form, .wiz-bulk .row { margin-top: 10px; }
+.wiz-title-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.wiz-title { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg-2); flex-wrap: wrap; }
+.wiz-title:has(input:checked) { border-color: rgba(245, 197, 66, .5); }
+.wiz-belt { font-size: 1.3rem; }
+.wiz-champ { width: auto; flex: 0 1 220px; min-width: 150px; }
+.wiz-done, .wiz-welcome { text-align: center; max-width: 620px; margin: 30px auto; }
+.wiz-trophy { font-size: 4rem; filter: drop-shadow(0 6px 20px rgba(245, 197, 66, .35)); }
+.wiz-next-steps { text-align: left; margin-top: 22px; }
+.wiz-next-steps ol { padding-left: 1.2rem; margin: 8px 0 0; }
+.wiz-next-steps li { padding: 4px 0; }
+@media (min-width: 640px) {
+  .wiz-add-row { grid-template-columns: 2fr 1.4fr 1fr 1fr auto; }
+  #wiz-add-member.wiz-add-row { grid-template-columns: 2fr 2fr 1.3fr auto; }
+}
+@media (max-width: 520px) {
+  .wiz-dot small { display: none; }
+  .wiz-nav .btn-lg { flex: 1; }
+}
+
+.save-pill { font-weight: 600; color: var(--muted); }
+.save-pill.ok { color: var(--good); }
+.save-pill.warn { color: var(--warn); }
+
+.wiz-steps { padding-left: 1.3rem; margin: 0 0 14px; display: flex; flex-direction: column; gap: 10px; }
+.wiz-steps .btn { margin-bottom: 4px; }
+.wiz-title .grow { flex: 1 1 160px; min-width: 0; }
+@media (max-width: 640px) {
+  .wiz-title .wiz-champ { flex: 1 1 100%; max-width: none; }
+}

@@ -1,6 +1,6 @@
 // The GM page: enter this week's results, then let the GM book next week.
 
-import { state, isAdmin, commit, refresh, hooks, runHooks, githubReady, publish, getSuperstar, getMember, getTitle, getBrand, getTeam, WIN_METHODS } from './store.js';
+import { state, isAdmin, commit, refresh, hooks, runHooks, githubReady, publish, autoSaveOn, getSuperstar, getMember, getTitle, getBrand, getTeam, WIN_METHODS } from './store.js';
 import { hasResult, matchName, currentReign, participants, today } from './stats.js';
 import {
   gmSettings, GM_DEFAULTS, PLE_NAMES, DAY_NAMES, currentWeek, weekEvents, weekStatus, isPLEWeek, pleNameFor, nextPLEWeek,
@@ -80,7 +80,7 @@ async function afterResults() {
     const ids = commit((data) => bookPlan(data, plan));
     toast(`🤖 Autopilot booked Week ${plan.week}`, 'ok', 5000);
     if ((state.admin.webhooks || []).length) await postCardsDirect(ids).catch((e) => toast(`Posting failed: ${e.message}`, 'error', 7000));
-    if (s.autoPublish && githubReady()) {
+    if (s.autoPublish && githubReady() && !autoSaveOn()) {
       const r = await publish({ message: `GM booked Week ${plan.week}` }).catch((e) => { toast(`Publish failed: ${e.message}`, 'error', 7000); return null; });
       if (r && r.ok) toast('Published to GitHub');
     }
@@ -206,8 +206,8 @@ function settingsSection() {
     <details ${ui.showSettings ? 'open' : ''} data-gm-settings>
       <summary><h2 class="inline">GM settings</h2></summary>
       <form id="gm-settings" class="form" style="margin-top:12px">
-        <label class="check autopilot"><input type="checkbox" name="autopilot" ${s.autopilot ? 'checked' : ''}> <span><strong>🤖 Autopilot.</strong> As soon as the last result of the week is saved, book next week, post the cards to Discord, and publish. No clicks needed.</span></label>
-        <label class="check"><input type="checkbox" name="autoPublish" ${s.autoPublish ? 'checked' : ''}> Autopilot also publishes to GitHub (needs Publishing set up)</label>
+        <label class="check autopilot"><input type="checkbox" name="autopilot" ${s.autopilot ? 'checked' : ''}> <span><strong>🤖 Autopilot.</strong> As soon as the last result of the week is saved, book next week and post the cards to Discord. No clicks needed.</span></label>
+        <label class="check"><input type="checkbox" name="autoPublish" ${s.autoPublish ? 'checked' : ''}> Autopilot also saves for everyone (if you haven't turned on automatic saving)</label>
         <div class="grid-form">
           ${field('Matches per weekly show', input('matchesPerShow', s.matchesPerShow, 'type="number" min="1" max="12"'))}
           ${field('PLE every … weeks', input('pleEvery', s.pleEvery, 'type="number" min="0" max="12"'), '0 = no PLEs. On PLE weeks there are no weekly shows.')}

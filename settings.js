@@ -1,11 +1,11 @@
-import { state, isAdmin, commit, refresh, uid, saveAdmin, guessRepo, githubReady, testGithub, reloadFromGithub, replaceData, defaultLeague, DEFAULT_MATCH_TYPES, clone } from './store.js';
+import { state, isAdmin, commit, refresh, uid, saveAdmin, guessRepo, githubReady, testGithub, reloadFromGithub, replaceData, defaultLeague, DEFAULT_MATCH_TYPES, clone, tokenUrl, scheduleAutoSave } from './store.js';
 import { esc, options, field, input, textarea, formModal, confirmDialog, toast, pageHead, formValues } from './ui.js';
 import { PURPOSES, validWebhook, sendWebhook, post, customMessage } from './discord.js';
 
 const ui = { tab: 'league' };
 const TABS = [
   ['league', 'League'], ['brands', 'Brands'], ['rules', 'Scoring & match types'],
-  ['discord', 'Discord'], ['github', 'Publishing'], ['backup', 'Backup & seasons'],
+  ['discord', 'Discord'], ['github', 'Saving'], ['backup', 'Backup & seasons'],
 ];
 
 function commissionerGate() {
@@ -100,12 +100,13 @@ function githubTab() {
   const a = state.admin;
   const g = guessRepo();
   return `<form class="form card" data-form="github">
-    <p>Publishing saves <code>league.json</code> to your GitHub repo so everyone sees the latest league. You need a <strong>fine-grained personal access token</strong> that can only touch this repo:</p>
+    <p>Saving stores your league in your GitHub repo, so <strong>everyone who opens the site sees the latest</strong>. It needs a one-time "save key" from GitHub:</p>
     <ol class="steps">
-      <li>On GitHub: <em>Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</em> (<a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">open</a>).</li>
-      <li>Repository access: <strong>Only select repositories</strong> → pick this league's repo.</li>
-      <li>Permissions → Repository permissions → <strong>Contents: Read and write</strong>. Generate, copy, paste below.</li>
+      <li><a class="btn btn-sm btn-primary" href="${esc(tokenUrl(a.owner || (g ? g.owner : '')))}" target="_blank" rel="noopener">Open GitHub to make a save key ↗</a> (the details are filled in for you)</li>
+      <li>Under <strong>Repository access</strong>, choose <strong>Only select repositories</strong> and pick this league's repo.</li>
+      <li>Click <strong>Generate token</strong>, copy it, and paste it below.</li>
     </ol>
+    <label class="check"><input type="checkbox" name="autoSave" ${a.autoSave !== false ? 'checked' : ''}> <span><strong>Save automatically.</strong> Every change saves for everyone a few seconds later. If you turn this off, you'll press "Save for everyone" yourself.</span></label>
     <p class="muted small">The token is saved only in this browser. Don't share it or paste it in Discord. Co-commissioners make their own token (they need to be collaborators on the repo).</p>
     <div class="grid-form">
       ${field('GitHub username (owner)', input('owner', a.owner || (g ? g.owner : ''), 'autocomplete="off" autocapitalize="off"'))}
@@ -232,11 +233,12 @@ export default {
           saveAdmin({ botName: v.botName, pingMembers: !!v.pingMembers });
           toast('Saved');
         } else if (kind === 'github') {
-          saveAdmin({ owner: v.owner, repo: v.repo, branch: v.branch || 'main', path: v.path || 'league.json', token: v.token });
+          saveAdmin({ owner: v.owner, repo: v.repo, branch: v.branch || 'main', path: v.path || 'league.json', token: v.token, autoSave: !!v.autoSave });
           if (!githubReady()) { toast('Fill in owner, repo and token', 'error'); return; }
           try {
             const name = await testGithub();
-            toast(`Connected to ${name} ✔`);
+            toast(`Connected to ${name} ✔${state.admin.autoSave !== false ? ' Changes now save automatically.' : ''}`);
+            if (state.dirty) scheduleAutoSave(500);
           } catch (err) { toast(err.message, 'error', 8000); }
         }
       });
@@ -266,6 +268,7 @@ export default {
       const g = guessRepo();
       saveAdmin({ on: true, ...(g && !state.admin.owner ? { owner: g.owner, repo: g.repo } : {}) });
       toast('Commissioner mode is on for this device');
+      if (!state.data.superstars.length && !state.data.league.setupDone) location.hash = '#/setup';
     },
     'set-admin-off': () => { saveAdmin({ on: false }); location.hash = '#/'; },
     'brand-new': () => openBrandForm(null),
