@@ -51,7 +51,10 @@
     "champBonus": 10,
     "formMatches": 5,
     "minMatchesForPct": 3,
-    "defaultDeadlineDays": 7
+    "defaultDeadlineDays": 7,
+    "gm": {
+      "pleEvery": 3
+    }
   },
   "brands": [
     {
@@ -638,7 +641,7 @@
       "notes": "Inaugural champion"
     },
     {
-      "id": "reign_es2fv6woev",
+      "id": "reign_m2aaqcwdgp",
       "titleId": "title_demo10",
       "holders": [
         "ss_demog"
@@ -653,7 +656,7 @@
       "notes": ""
     },
     {
-      "id": "reign_dlg50uwoev",
+      "id": "reign_n98y3nwdgp",
       "titleId": "title_demo11",
       "holders": [
         "ss_democ",
@@ -669,7 +672,7 @@
       "notes": ""
     },
     {
-      "id": "reign_v9dek2woev",
+      "id": "reign_6jj2v1wdgp",
       "titleId": "title_demow",
       "holders": [
         "ss_democ"
@@ -684,7 +687,7 @@
       "notes": ""
     },
     {
-      "id": "reign_f39ivewoev",
+      "id": "reign_w9ioy6wdgp",
       "titleId": "title_demoy",
       "holders": [
         "ss_demol"
@@ -708,6 +711,7 @@
       "date": "2026-10-05",
       "deadline": "2026-10-09",
       "season": 1,
+      "week": 1,
       "posterUrl": "",
       "notes": "",
       "card": [
@@ -821,6 +825,7 @@
       "date": "2026-10-03",
       "deadline": "2026-10-08",
       "season": 1,
+      "week": 1,
       "posterUrl": "",
       "notes": "",
       "card": [
@@ -940,6 +945,7 @@
       "date": "2026-10-12",
       "deadline": "2026-10-16",
       "season": 1,
+      "week": 2,
       "posterUrl": "",
       "notes": "",
       "card": [
@@ -1010,6 +1016,9 @@
             "rating": 3,
             "link": "",
             "notes": ""
+          },
+          "gmFx": {
+            "createdStoryline": "story_ko9huewdgp"
           }
         },
         {
@@ -1055,6 +1064,7 @@
       "date": "2026-10-10",
       "deadline": "2026-10-15",
       "season": 1,
+      "week": 2,
       "posterUrl": "",
       "notes": "",
       "card": [
@@ -1168,6 +1178,7 @@
       "date": "2026-10-17",
       "deadline": "2026-10-21",
       "season": 1,
+      "week": 3,
       "posterUrl": "",
       "notes": "The first PLE of Season 1. Every title on the line!",
       "card": [
@@ -1322,12 +1333,13 @@
     },
     {
       "id": "ev_demo1x",
-      "name": "SmackDown Week 3",
+      "name": "SmackDown Week 4",
       "type": "weekly",
       "brandId": "smackdown",
       "date": "2026-10-24",
       "deadline": "2026-10-29",
       "season": 1,
+      "week": 4,
       "posterUrl": "",
       "notes": "Fallout from SNME. Who steps up to Cody?",
       "card": [
@@ -1422,12 +1434,13 @@
     },
     {
       "id": "ev_demo20",
-      "name": "Raw Week 3",
+      "name": "Raw Week 4",
       "type": "weekly",
       "brandId": "raw",
       "date": "2026-10-26",
       "deadline": "2026-10-30",
       "season": 1,
+      "week": 4,
       "posterUrl": "",
       "notes": "",
       "card": [
@@ -1505,7 +1518,7 @@
         {
           "id": "upd_demo24",
           "date": "2026-10-19",
-          "text": "Steel cage rematch made official for Raw Week 3."
+          "text": "Steel cage rematch made official for Raw Week 4."
         }
       ]
     },

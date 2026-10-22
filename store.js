@@ -145,6 +145,10 @@ export const state = {
   me: lsGet(LS_ME, ''),
 };
 
+// Other parts of the app can react to events (e.g. the GM books next week once results are in).
+export const hooks = { afterResults: new Set() };
+export function runHooks(name) { for (const fn of hooks[name] || []) { try { fn(); } catch (e) { console.error(e); } } }
+
 const listeners = new Set();
 export function subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 function emit() { for (const fn of listeners) fn(); }

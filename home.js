@@ -3,6 +3,7 @@ import { currentReign, reignLength, powerRankings, pendingMatches, hasResult, ma
 import { esc, safeUrl, avatar, holderText, matchupText, fmtDate, options, emptyState, brandChip, stars } from './ui.js';
 import { remindersMessage, post } from './discord.js';
 import { eventStatus } from './shows.js';
+import { currentWeek, weekStatus, isPLEWeek, pleNameFor, gmSettings } from './gm.js';
 
 function myMatches() {
   const me = getMember(state.me);
@@ -28,6 +29,23 @@ function myMatches() {
       <a class="btn btn-sm btn-primary" href="#/submit?match=${esc(seg.id)}">Submit result</a>
     </div>`;
   }).join('')}</div>`;
+}
+
+function gmCard() {
+  const d = state.data;
+  if (d.superstars.length < 4) return '';
+  const cur = currentWeek(d);
+  const st = cur ? weekStatus(d, cur) : null;
+  const next = cur + 1;
+  const ple = isPLEWeek(d, next);
+  let msg, btn;
+  if (!cur) { msg = 'Your GM is ready to book Week 1.'; btn = 'Book Week 1'; }
+  else if (st.complete) { msg = `All Week ${cur} results are in. Time to book Week ${next}${ple ? ` (${esc(pleNameFor(d, next))})` : ''}.`; btn = `Book Week ${next}`; }
+  else { msg = `Week ${cur}: ${st.done}/${st.total} results in.`; btn = 'Enter results'; }
+  return `<section class="card gm-home">
+    <div class="row between wrap gap"><div><div class="eyebrow">General Manager${gmSettings(d).autopilot ? ' · 🤖 Autopilot' : ''}</div><div class="gm-home-msg">${msg}</div></div>
+    <a class="btn btn-primary" href="#/gm">${btn}</a></div>
+  </section>`;
 }
 
 function setupChecklist() {
@@ -76,6 +94,7 @@ export default {
     </section>
 
     ${isAdmin() ? setupChecklist() : ''}
+    ${isAdmin() ? gmCard() : ''}
 
     ${titles.length ? `<section>
       <div class="section-head"><h2>Champions</h2><a href="#/titles">All titles →</a></div>

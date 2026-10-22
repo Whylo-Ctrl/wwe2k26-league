@@ -12,6 +12,7 @@ import storylines from './storylines.js';
 import draft from './draft.js';
 import { submitView, inboxView } from './submit.js';
 import settings from './settings.js';
+import gmPage from './gm-page.js';
 
 const ROUTES = [
   { path: '', view: home, nav: 'home' },
@@ -27,10 +28,12 @@ const ROUTES = [
   { path: 'submit', view: submitView, nav: 'submit' },
   { path: 'inbox', view: inboxView, nav: 'inbox' },
   { path: 'settings', view: settings, nav: 'settings' },
+  { path: 'gm', view: gmPage, nav: 'gm' },
 ];
 
 const NAV = [
   { id: 'home', href: '#/', label: 'Home' },
+  { id: 'gm', href: '#/gm', label: 'GM', show: () => isAdmin() },
   { id: 'shows', href: '#/shows', label: 'Shows' },
   { id: 'standings', href: '#/standings', label: 'Standings' },
   { id: 'titles', href: '#/titles', label: 'Titles' },

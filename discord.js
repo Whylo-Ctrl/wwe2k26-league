@@ -126,6 +126,7 @@ export function cardMessage(ev) {
         else {
           value = seg.sides.filter((s) => s.ids.length).map(sideWithTags).join('\n**vs**\n') || 'TBD';
           if (seg.stipulation) value += `\n_${seg.stipulation}_`;
+          if (seg.gm && seg.gm.reason) value += `\n> ${seg.gm.reason}`;
           const dl = seg.deadline || ev.deadline;
           if (dl && !hasResult(seg)) value += `\n⏰ Play by **${fmtDate(dl, { weekday: true })}**`;
         }
@@ -425,6 +426,7 @@ function md(text) {
   });
   h = h.replace(/@everyone/g, '<span class="dc-mention">@everyone</span>');
   h = h.replace(/^# (.+)$/gm, '<span class="dc-h1">$1</span>');
+  h = h.replace(/^&gt; (.+)$/gm, '<span class="dc-quote">$1</span>');
   h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   h = h.replace(/(^|[^\w])_(.+?)_(?!\w)/g, '$1<em>$2</em>');
   h = h.replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');

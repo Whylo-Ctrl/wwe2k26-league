@@ -26,6 +26,7 @@ function titleForm(t) {
       ${field('Type', `<select name="kind">${options([{ value: 'singles', label: 'Singles' }, { value: 'tag', label: 'Tag team' }], t ? t.kind : 'singles')}</select>`)}
       ${field('Division', `<select name="division">${options([{ value: 'men', label: "Men's" }, { value: 'women', label: "Women's" }, { value: 'open', label: 'Open / intergender' }], t ? t.division : 'men')}</select>`)}
       ${field('Display order', input('order', t ? t.order ?? '' : d.championships.length + 1, 'type="number"'))}
+      ${field('Title level (for the GM)', `<select name="tier">${options([{ value: 'auto', label: 'Auto' }, { value: 'world', label: 'World title (defended at PLEs)' }, { value: 'secondary', label: 'Secondary (defended on TV too)' }, { value: 'tag', label: 'Tag title' }], t ? t.tier || 'auto' : 'auto')}</select>`, 'Auto: the first singles title of a brand and division is its world title.')}
     </div>
     ${field('Belt image URL', input('imageUrl', t ? t.imageUrl || '' : '', 'type="url" placeholder="https://… (optional)"'))}
     ${t ? `<label class="check"><input type="checkbox" name="retired" ${t.retired ? 'checked' : ''}> Retired (hide from active titles)</label>` : ''}`;
@@ -38,7 +39,7 @@ function openTitleForm(id) {
     html: titleForm(t),
     onSubmit(v) {
       if (!v.name) { toast('Name is required', 'error'); return false; }
-      const fields = { name: v.name, brandId: v.brandId || null, kind: v.kind, division: v.division, order: Number(v.order) || 0, imageUrl: v.imageUrl, retired: !!v.retired };
+      const fields = { name: v.name, brandId: v.brandId || null, kind: v.kind, division: v.division, order: Number(v.order) || 0, imageUrl: v.imageUrl, retired: !!v.retired, tier: v.tier || 'auto' };
       if (t) commit(() => Object.assign(t, fields));
       else commit((d) => d.championships.push({ id: uid('title'), ...fields }));
     },
@@ -130,6 +131,7 @@ export const titlesView = {
               <div><div class="holder-name">${holderText(r, { html: true })}</div><div class="muted small">${plural(reignLength(r), 'day')} · ${plural(defenses(d, r.id), 'defense')} · since ${esc(fmtDate(r.wonAt, { short: true }))}</div></div>`
               : '<div class="muted">Vacant</div>'}
           </div>
+          ${t.contender ? `<div class="small">#1 contender: <strong>${holderText({ holders: t.contender.ids || [], teamId: t.contender.teamId }, { html: true })}</strong></div>` : ''}
           <div class="row gap wrap">
             <a class="btn btn-sm btn-ghost" href="#/title/${esc(t.id)}">History (${count})</a>
             ${isAdmin() && !t.retired ? `<button class="btn btn-sm btn-ghost" data-act="title-award" data-id="${esc(t.id)}">Award</button>${r ? `<button class="btn btn-sm btn-ghost" data-act="title-vacate" data-id="${esc(t.id)}">Vacate</button>` : ''}` : ''}

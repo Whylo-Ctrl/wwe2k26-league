@@ -1,10 +1,11 @@
-import { state, isAdmin, commit, refresh, uid, clone, getEvent, getBrand, getTitle, getSuperstar, getTeam, getMember, MATCH_FORMATS, WIN_METHODS, NON_TITLE_CHANGE_METHODS, sortedEvents, findSegment } from './store.js';
+import { state, isAdmin, commit, refresh, runHooks, uid, clone, getEvent, getBrand, getTitle, getSuperstar, getTeam, getMember, MATCH_FORMATS, WIN_METHODS, NON_TITLE_CHANGE_METHODS, sortedEvents, findSegment } from './store.js';
 import { hasResult, matchName, applyResult, undoTitleEffects, currentReign, participants, today, parseDate } from './stats.js';
 import {
   esc, safeUrl, fmtDate, stars, avatar, brandChip, sideText, holderText, options, opt, superstarOptions, superstarChecklist,
   field, input, textarea, formModal, openModal, confirmDialog, toast, emptyState, pageHead, bindChecklistSearch,
 } from './ui.js';
 import { post, cardMessage, resultsMessage, singleResultMessage, titleChangeMessage, remindersMessage } from './discord.js';
+import { recordResult, undoGmEffects } from './gm.js';
 
 export function eventStatus(ev) {
   const matches = ev.card.filter((s) => s.kind === 'match');
@@ -173,7 +174,8 @@ function segmentCard(ev, seg, i, n) {
       <span class="seg-num">${i + 1}</span>
       <div class="grow">
         <div class="seg-title">${esc(matchName(seg))}</div>
-        <div class="chips">${t ? `<span class="chip chip-gold">🏆 ${esc(t.name)}</span>` : ''}${seg.stipulation ? `<span class="chip chip-muted">${esc(seg.stipulation)}</span>` : ''}</div>
+        <div class="chips">${t ? `<span class="chip chip-gold">🏆 ${esc(t.name)}</span>` : ''}${seg.contenderFor ? '<span class="chip chip-upcoming">#1 Contender</span>' : ''}${seg.stipulation ? `<span class="chip chip-muted">${esc(seg.stipulation)}</span>` : ''}</div>
+        ${seg.gm && seg.gm.reason ? `<div class="gm-reason">${esc(seg.gm.reason)}</div>` : ''}
       </div>
       ${tools}
     </div>
@@ -222,7 +224,7 @@ export const showView = {
       const ev = getEvent(el.dataset.ev);
       if (!(await confirmDialog(`Delete <strong>${esc(ev.name)}</strong> and all its matches and results? Title changes from this show are undone too.`, { okLabel: 'Delete show', danger: true }))) return;
       commit((d) => {
-        for (const seg of ev.card) undoTitleEffects(d, seg);
+        for (const seg of ev.card) { undoGmEffects(d, seg); undoTitleEffects(d, seg); }
         d.events = d.events.filter((e) => e.id !== ev.id);
       });
       location.hash = '#/shows';
@@ -240,7 +242,7 @@ export const showView = {
     'seg-delete': async (el) => {
       const f = findSegment(el.dataset.seg);
       if (!(await confirmDialog(`Remove <strong>${esc(f.seg.kind === 'promo' ? f.seg.title || 'this segment' : matchName(f.seg))}</strong> from the card?`, { okLabel: 'Remove', danger: true }))) return;
-      commit((d) => { undoTitleEffects(d, f.seg); f.ev.card = f.ev.card.filter((s) => s.id !== f.seg.id); });
+      commit((d) => { undoGmEffects(d, f.seg); undoTitleEffects(d, f.seg); f.ev.card = f.ev.card.filter((s) => s.id !== f.seg.id); });
     },
     'seg-up': (el) => moveSeg(el.dataset.seg, -1),
     'seg-down': (el) => moveSeg(el.dataset.seg, 1),
@@ -379,7 +381,7 @@ function openMatchBuilder(evId, segId) {
       const changed = JSON.stringify(existing.sides.map((s) => s.ids)) !== JSON.stringify(sides.map((s) => s.ids)) || (existing.titleId || null) !== fields.titleId;
       if (existing.result && changed) {
         if (!(await confirmDialog('This match already has a result. Changing who is in it (or the title) clears that result.', { okLabel: 'Change and clear result', danger: true }))) return;
-        commit((d) => { undoTitleEffects(d, existing); existing.result = null; Object.assign(existing, fields); });
+        commit((d) => { recordResult(d, ev, existing, null); Object.assign(existing, fields); });
       } else commit(() => Object.assign(existing, fields));
     } else {
       commit(() => ev.card.push({ id: uid('m'), kind: 'match', ...fields, result: null }));
@@ -449,13 +451,14 @@ export function resultFromForm(v) {
 export function saveResult(segId, result) {
   const f = findSegment(segId);
   if (!f) throw new Error('That match no longer exists.');
-  const outcome = commit((d) => applyResult(d, f.ev, f.seg, result));
+  const outcome = commit((d) => recordResult(d, f.ev, f.seg, result));
   if (outcome && outcome.kind === 'change') {
     toast(`👑 New ${getTitle(f.seg.titleId)?.name || 'champion'}: ${holderText(outcome.reign)}`, 'ok', 5000);
     setTimeout(() => post(titleChangeMessage(outcome.reign)), 50);
   } else if (outcome && outcome.kind === 'retain') {
     toast(`Result saved — ${holderText(outcome.reign)} retained${outcome.reason ? ` (${outcome.reason})` : ''}`);
   } else toast('Result saved');
+  runHooks('afterResults');
   return outcome;
 }
 
@@ -470,7 +473,8 @@ function openResult(segId) {
     onMount(form, m) {
       const btn = m.el.querySelector('[data-clear-result]');
       if (btn) btn.addEventListener('click', () => {
-        commit((d) => { undoTitleEffects(d, seg); seg.result = null; });
+        const f = findSegment(segId);
+        commit((d) => { recordResult(d, f.ev, seg, null); });
         toast('Result cleared');
         m.close();
       });

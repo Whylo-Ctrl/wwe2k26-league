@@ -2,6 +2,21 @@
 
 A website for running a WWE 2K26 league on Discord. It hosts free on GitHub Pages and works on phones. It posts match cards, results and title changes straight into your Discord channels. There's no bot or server to keep running.
 
+## The GM (auto-booking)
+
+Give it your superstars, members and championships, and the **GM page** books every week for you. Enter the results, and it books the next week:
+
+- **Weekly shows** for each brand, plus a **Premium Live Event every 4 weeks** (Royal Rumble, Elimination Chamber, WrestleMania…) with every title on the line.
+- **Title defenses:** secondary and tag titles are defended on TV every couple of weeks, and world titles at PLEs. Challengers come from the power rankings and win streaks, and a former champion gets a rematch-clause shot.
+- **#1 contender's matches** the week before a PLE. The winner is locked in for the title shot.
+- **Rematches after messy finishes:** a DQ leads to No Holds Barred, a count-out to Falls Count Anywhere or Steel Cage, and a draw to Last Man Standing.
+- **Feuds escalate** week to week and end in a stipulation match at a PLE. Rivalries start on their own after DQs, count-outs and draws, and every feud result is logged on its storyline.
+- **Every member gets a match each week** against an opponent near their level, and never against their own superstar. CPU superstars fill in where needed.
+- Every match comes with a line explaining **why it was booked**, and that line goes out in the Discord post too.
+- **Autopilot (optional):** the moment the last result of the week is saved, it books next week, posts the cards to Discord and publishes. No clicks needed.
+
+You can always shuffle the card, remove or add matches, or edit anything before you approve it.
+
 ## What it does
 
 - **Shows:** book weekly shows and PLEs. Cards can use any 2K26 format and match type (singles to Royal Rumble, tag, handicap, WarGames, Inferno, Dumpster, 3 Stages of Hell…), title matches, deadlines and promo segments.
@@ -48,12 +63,13 @@ To let posts **@mention** members, add each member's Discord user ID on the Rost
 
 ## Running a week
 
-1. **Shows → + Book show.** Add matches (or promo segments), set the "play by" date.
-2. Tap **Post card**. Members get pinged with their matches and deadlines.
-3. Members play online, then use **Submit** on the site and paste the message it gives them into your submissions channel.
-4. Copy those messages into **Inbox** and approve them, or enter results yourself with **Enter result**.
-5. **Post results**, then go to **Standings → Post power rankings**.
-6. **Publish.**
+1. Open **GM → Book Week 1**. Check the card, then **Approve & book**. It posts the cards to Discord, and members get pinged with their matches and deadlines.
+2. Members play online, then use **Submit** on the site and paste the message it gives them into your submissions channel.
+3. Copy those messages into **Inbox** and approve them. Or tap the winners yourself on the **GM** page.
+4. When every result is in, the GM books the next week. With autopilot on, it does this by itself.
+5. Post results and power rankings from **Standings**, then **Publish** (autopilot publishes for you).
+
+Want to book a show by hand instead? **Shows → + Book show** still works any time.
 
 New season? **Settings → Backup & seasons → Start Season 2**. Standings reset, while champions and all-time stats carry over.
 
@@ -69,8 +85,9 @@ Add them as collaborators on the repo. Each one turns on commissioner mode on th
 | `store.js` | League data, saving drafts, publishing to GitHub |
 | `stats.js` | Records, standings, power rankings, title logic |
 | `discord.js` | Discord messages + webhooks |
+| `gm.js` | The GM: weekly booking, contenders, rivalries |
 | `ui.js` | Shared helpers (popups, forms) |
-| `home.js`, `shows.js`, `roster.js`, `titles.js`, `standings.js`, `storylines.js`, `draft.js`, `submit.js`, `settings.js` | One file per page |
+| `home.js`, `gm-page.js`, `shows.js`, `roster.js`, `titles.js`, `standings.js`, `storylines.js`, `draft.js`, `submit.js`, `settings.js` | One file per page |
 | `league.json` | **Your league data** (the site edits this for you) |
 | `demo.json` | Sample league for trying things out |
 
